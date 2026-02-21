@@ -55,13 +55,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTicket(ticket: CreateTicketRequest): Promise<TicketResponse> {
-    const [newTicket] = await db.insert(tickets).values(ticket).returning();
+    const [newTicket] = await db.insert(tickets).values(ticket as any).returning();
     return newTicket;
   }
 
   async updateTicket(id: number, updates: UpdateTicketRequest): Promise<TicketResponse> {
     const [updated] = await db.update(tickets)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date() } as any)
       .where(eq(tickets.id, id))
       .returning();
     return updated;

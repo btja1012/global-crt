@@ -59,11 +59,11 @@ export function Navigation() {
                 </DropdownMenu>
               </div>
             ) : (
-              <a href="/api/login">
+              <Link href="/login">
                 <Button variant="default" data-testid="button-login">
                   Iniciar Sesión
                 </Button>
-              </a>
+              </Link>
             )}
           </div>
         </div>

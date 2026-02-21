@@ -121,15 +121,24 @@ export function useAddComment() {
   });
 }
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function useUploadAttachment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ ticketId, file }: { ticketId: number; file: File }) => {
-      const formData = new FormData();
-      formData.append("file", file);
+      const fileData = await fileToBase64(file);
       const res = await fetch(buildUrl("/api/tickets/:ticketId/attachments", { ticketId }), {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, fileData }),
         credentials: "include",
       });
       if (!res.ok) throw new Error("Error al subir archivo");
