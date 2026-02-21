@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Globe, Shield, Clock, Ship, Plane, Truck, Phone, MapPin, Mail } from "lucide-react";
@@ -14,62 +13,62 @@ export default function HomePage() {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="relative flex items-center justify-center min-h-[90vh] overflow-hidden pt-16">
+      <section className="relative flex items-center justify-center min-h-screen overflow-hidden pt-16">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/50 -z-20" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] -z-20" />
 
-        <div className="container px-4 md:px-6 relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+        <div className="container px-4 md:px-6 relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-12 items-center py-12 lg:py-0">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="flex flex-col gap-6"
+            className="flex flex-col gap-5 lg:gap-6 text-center lg:text-left items-center lg:items-start"
           >
             <div className="inline-flex items-center space-x-2 bg-primary/10 text-primary px-4 py-2 rounded-full w-fit">
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
               </span>
-              <span className="text-sm font-semibold tracking-wide uppercase">20 Years of Experience</span>
+              <span className="text-xs sm:text-sm font-semibold tracking-wide uppercase">20 Years of Experience</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
               Connecting <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
                 The World
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
               Global CR Transport: 20 years of excellence in international logistics.
               Premium import and export solutions for Costa Rica and the world.
             </p>
 
-            <div className="flex flex-wrap gap-3 pt-1">
-              <a href="https://wa.me/50683996456" target="_blank" rel="noopener noreferrer">
-                <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-base font-semibold" data-testid="button-whatsapp-hero">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <a href="https://wa.me/50683996456" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-base font-semibold w-full sm:w-auto" data-testid="button-whatsapp-hero">
                   <SiWhatsapp className="w-5 h-5 text-green-500" />
                   Contact Us
                 </Button>
               </a>
-              <a href="#services">
-                <Button variant="ghost" size="lg" className="h-12 px-6 text-base font-semibold" data-testid="button-services">
+              <a href="#services" className="w-full sm:w-auto">
+                <Button variant="ghost" size="lg" className="h-12 px-6 text-base font-semibold w-full sm:w-auto" data-testid="button-services">
                   Our Services
                 </Button>
               </a>
             </div>
 
-            <div className="flex flex-wrap gap-4 pt-2 text-xs md:text-sm text-muted-foreground">
+            <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-1 text-xs md:text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" />
+                <Shield className="w-4 h-4 text-primary flex-shrink-0" />
                 <span>Secure Shipping</span>
               </div>
               <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-primary" />
+                <Globe className="w-4 h-4 text-primary flex-shrink-0" />
                 <span>Global Reach</span>
               </div>
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-primary" />
+                <Clock className="w-4 h-4 text-primary flex-shrink-0" />
                 <span>24/7 Support</span>
               </div>
             </div>
@@ -108,16 +107,16 @@ export default function HomePage() {
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-24 bg-secondary/30 scroll-mt-16">
+      <section id="services" className="py-16 md:py-24 bg-secondary/30 scroll-mt-16">
         <div className="container px-4 md:px-6 max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Our Services</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+          <div className="text-center mb-10 md:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">Our Services</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
               Comprehensive logistics solutions tailored to your needs.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-8">
             {[
               {
                 icon: Ship,
@@ -138,13 +137,13 @@ export default function HomePage() {
               <motion.div
                 key={i}
                 whileHover={{ y: -5 }}
-                className="bg-card p-8 rounded-2xl border shadow-sm hover:shadow-xl transition-all"
+                className="bg-card p-6 md:p-8 rounded-2xl border shadow-sm hover:shadow-xl transition-all"
               >
-                <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-6">
-                  <service.icon className="w-7 h-7" />
+                <div className="w-12 h-12 md:w-14 md:h-14 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-5">
+                  <service.icon className="w-6 h-6 md:w-7 md:h-7" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">{service.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{service.desc}</p>
+                <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">{service.title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm md:text-base">{service.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -152,12 +151,12 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-24">
+      <section className="py-16 md:py-24">
         <div className="container px-4 md:px-6 max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Why Choose Us?</h2>
+          <div className="text-center mb-10 md:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">Why Choose Us?</h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
               { value: "20+", label: "Years of experience" },
               { value: "5000+", label: "Shipments handled" },
@@ -171,9 +170,9 @@ export default function HomePage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
               >
-                <Card className="p-6 text-center hover:shadow-md transition-shadow">
-                  <p className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.value}</p>
-                  <p className="text-muted-foreground text-sm">{stat.label}</p>
+                <Card className="p-4 md:p-6 text-center hover:shadow-md transition-shadow">
+                  <p className="text-2xl md:text-4xl font-bold text-primary mb-1 md:mb-2">{stat.value}</p>
+                  <p className="text-muted-foreground text-xs md:text-sm">{stat.label}</p>
                 </Card>
               </motion.div>
             ))}
@@ -182,17 +181,17 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-foreground text-background py-12">
+      <footer id="contact" className="bg-foreground text-background py-12">
         <div className="container max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center sm:text-left">
           <div className="col-span-1 sm:col-span-2 flex flex-col items-center sm:items-start">
-            <h3 className="text-2xl font-display font-bold mb-4">Global CR Transport</h3>
-            <p className="text-white/60 max-w-xs">
+            <h3 className="text-xl md:text-2xl font-display font-bold mb-4">Global CR Transport</h3>
+            <p className="text-white/60 max-w-xs text-sm md:text-base">
               Your trusted partner in international logistics and cargo transportation. 20 years of experience.
             </p>
           </div>
           <div>
             <h4 className="font-bold mb-4 text-primary">Services</h4>
-            <ul className="space-y-2 text-white/60">
+            <ul className="space-y-2 text-white/60 text-sm">
               <li>Maritime Freight</li>
               <li>Air Freight</li>
               <li>Customs Clearance</li>
@@ -201,20 +200,21 @@ export default function HomePage() {
           </div>
           <div>
             <h4 className="font-bold mb-4 text-primary">Contact</h4>
-            <ul className="space-y-2 text-white/60">
+            <ul className="space-y-3 text-white/60 text-sm">
               <li className="flex items-center gap-2 justify-center sm:justify-start">
-                <MapPin className="w-4 h-4" /> San José, Costa Rica
+                <MapPin className="w-4 h-4 flex-shrink-0" /> San José, Costa Rica
               </li>
               <li className="flex items-center gap-2 justify-center sm:justify-start">
-                <Mail className="w-4 h-4" /> operaciones@global-crt.com
+                <Mail className="w-4 h-4 flex-shrink-0" />
+                <span className="break-all">operaciones@global-crt.com</span>
               </li>
               <li className="flex items-center gap-2 justify-center sm:justify-start">
-                <Phone className="w-4 h-4" /> +506 8399-6456
+                <Phone className="w-4 h-4 flex-shrink-0" /> +506 8399-6456
               </li>
             </ul>
           </div>
         </div>
-        <div className="container max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-white/10 text-center text-white/40 text-sm">
+        <div className="container max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-white/10 text-center text-white/40 text-xs md:text-sm">
           © {new Date().getFullYear()} Global CR Transport. All rights reserved. | global-crt.com
         </div>
       </footer>
@@ -224,10 +224,10 @@ export default function HomePage() {
         href="https://wa.me/50683996456"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 hover:scale-105 transition-all"
+        className="fixed bottom-6 right-6 z-50 bg-green-500 text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-green-600 hover:scale-105 transition-all"
         data-testid="button-whatsapp-float"
       >
-        <SiWhatsapp className="w-6 h-6" />
+        <SiWhatsapp className="w-5 h-5 md:w-6 md:h-6" />
       </a>
     </div>
   );
