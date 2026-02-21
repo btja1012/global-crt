@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Ship, LogOut, LayoutDashboard, User } from "lucide-react";
 
-export function Navigation({ lang, setLang }: { lang?: 'en' | 'es', setLang?: (l: 'en' | 'es') => void }) {
+export function Navigation() {
   const { user, logout, isAuthenticated } = useAuth();
   const [location] = useLocation();
 
@@ -26,23 +26,44 @@ export function Navigation({ lang, setLang }: { lang?: 'en' | 'es', setLang?: (l
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
-              <Ship className="h-6 w-6 text-primary" />
+              <Ship className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
-            <span className="font-display font-bold text-xl tracking-tight text-foreground">
+            <span className="font-display font-bold text-lg sm:text-xl tracking-tight text-foreground">
               Global CR <span className="text-primary">Transport</span>
             </span>
           </Link>
 
-          <div className="flex items-center space-x-4">
-            {setLang && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
-                className="text-xs font-bold"
-              >
-                {lang === 'en' ? 'ES' : 'EN'}
-              </Button>
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2 sm:gap-4">
+                <Link href="/admin">
+                  <Button variant={location === "/admin" ? "secondary" : "ghost"} className="gap-2" data-testid="link-dashboard">
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span className="hidden sm:inline">Panel</span>
+                  </Button>
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full" data-testid="button-user-menu">
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold border border-primary/20">
+                        {user?.firstName?.[0] || <User className="w-4 h-4" />}
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive" data-testid="button-logout">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Cerrar Sesión
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <a href="/api/login">
+                <Button variant="default" data-testid="button-login">
+                  Iniciar Sesión
+                </Button>
+              </a>
             )}
           </div>
         </div>

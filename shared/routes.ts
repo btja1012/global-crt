@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertCargoSchema, cargos } from './schema';
+import { insertTicketSchema, insertCommentSchema, tickets, comments, attachments } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -15,48 +15,40 @@ export const errorSchemas = {
 };
 
 export const api = {
-  cargos: {
+  tickets: {
     list: {
       method: 'GET' as const,
-      path: '/api/cargos' as const,
+      path: '/api/tickets' as const,
       responses: {
-        200: z.array(z.custom<typeof cargos.$inferSelect>()),
+        200: z.array(z.any()),
         401: errorSchemas.unauthorized,
       },
     },
     get: {
       method: 'GET' as const,
-      path: '/api/cargos/:id' as const,
+      path: '/api/tickets/:id' as const,
       responses: {
-        200: z.custom<typeof cargos.$inferSelect>(),
+        200: z.any(),
         404: errorSchemas.notFound,
         401: errorSchemas.unauthorized,
       },
     },
-    track: {
-      method: 'GET' as const,
-      path: '/api/track/:trackingNumber' as const,
-      responses: {
-        200: z.custom<typeof cargos.$inferSelect>(),
-        404: errorSchemas.notFound,
-      },
-    },
     create: {
       method: 'POST' as const,
-      path: '/api/cargos' as const,
-      input: insertCargoSchema,
+      path: '/api/tickets' as const,
+      input: insertTicketSchema,
       responses: {
-        201: z.custom<typeof cargos.$inferSelect>(),
+        201: z.any(),
         400: errorSchemas.validation,
         401: errorSchemas.unauthorized,
       },
     },
     update: {
       method: 'PUT' as const,
-      path: '/api/cargos/:id' as const,
-      input: insertCargoSchema.partial(),
+      path: '/api/tickets/:id' as const,
+      input: insertTicketSchema.partial(),
       responses: {
-        200: z.custom<typeof cargos.$inferSelect>(),
+        200: z.any(),
         400: errorSchemas.validation,
         404: errorSchemas.notFound,
         401: errorSchemas.unauthorized,
@@ -64,10 +56,57 @@ export const api = {
     },
     delete: {
       method: 'DELETE' as const,
-      path: '/api/cargos/:id' as const,
+      path: '/api/tickets/:id' as const,
       responses: {
         204: z.void(),
         404: errorSchemas.notFound,
+        401: errorSchemas.unauthorized,
+      },
+    },
+  },
+  comments: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/tickets/:ticketId/comments' as const,
+      responses: {
+        200: z.array(z.any()),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/tickets/:ticketId/comments' as const,
+      input: z.object({ content: z.string().min(1) }),
+      responses: {
+        201: z.any(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+  },
+  attachments: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/tickets/:ticketId/attachments' as const,
+      responses: {
+        200: z.array(z.any()),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    upload: {
+      method: 'POST' as const,
+      path: '/api/tickets/:ticketId/attachments' as const,
+      responses: {
+        201: z.any(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/attachments/:id' as const,
+      responses: {
+        204: z.void(),
         401: errorSchemas.unauthorized,
       },
     },
@@ -85,7 +124,3 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
   }
   return url;
 }
-
-export type CargoInput = z.infer<typeof api.cargos.create.input>;
-export type CargoUpdateInput = z.infer<typeof api.cargos.update.input>;
-export type CargoResponse = z.infer<typeof api.cargos.create.responses[201]>;

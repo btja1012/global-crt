@@ -1,25 +1,13 @@
 import { useAuth } from "@/hooks/use-auth";
-import { redirectToLogin } from "@/lib/auth-utils";
+import { redirectToLogin, isUnauthorizedError } from "@/lib/auth-utils";
 import { useEffect, useState } from "react";
-import { useCargos, useDeleteCargo } from "@/hooks/use-cargos";
+import { useTickets, useUpdateTicket, useDeleteTicket } from "@/hooks/use-tickets";
 import { Navigation } from "@/components/Navigation";
-import { CreateCargoDialog } from "@/components/CreateCargoDialog";
+import { CreateTicketDialog } from "@/components/CreateTicketDialog";
+import { TicketDetailDialog } from "@/components/TicketDetailDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,188 +18,268 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Search, MoreHorizontal, Pencil, Trash2, ArrowUpDown } from "lucide-react";
-import { format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader2, Search, MoreHorizontal, Pencil, Trash2, MessageSquare, Paperclip, MapPin, User, Package, GripVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { TICKET_STATUSES, type TicketWithDetails, type TicketStatus } from "@shared/schema";
+
+const COLUMN_COLORS: Record<string, string> = {
+  "Nuevo": "border-t-slate-400",
+  "En Proceso": "border-t-blue-500",
+  "Aduana": "border-t-amber-500",
+  "En Tránsito": "border-t-purple-500",
+  "Entregado": "border-t-green-500",
+};
+
+const COLUMN_DOT_COLORS: Record<string, string> = {
+  "Nuevo": "bg-slate-400",
+  "En Proceso": "bg-blue-500",
+  "Aduana": "bg-amber-500",
+  "En Tránsito": "bg-purple-500",
+  "Entregado": "bg-green-500",
+};
 
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  
-  // Auth Check
+
   useEffect(() => {
     if (!authLoading && !user) {
-      redirectToLogin((props) => toast(props));
+      redirectToLogin((props: any) => toast(props));
     }
   }, [user, authLoading, toast]);
 
   if (authLoading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/20">
+    <div className="min-h-screen bg-muted/30 flex flex-col">
       <Navigation />
-      <main className="container max-w-7xl mx-auto px-4 py-24">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <main className="flex-1 flex flex-col pt-20 px-4 pb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 max-w-[1600px] mx-auto w-full">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Shipment Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage and track all ongoing logistics operations.
+            <h1 className="text-2xl font-bold tracking-tight" data-testid="text-dashboard-title">Panel de Control</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Gestiona los tickets de carga y logística
             </p>
           </div>
-          <CreateCargoDialog />
+          <CreateTicketDialog />
         </div>
-
-        <CargosTable />
+        <KanbanBoard />
       </main>
     </div>
   );
 }
 
-function CargosTable() {
-  const { data: cargos, isLoading } = useCargos();
-  const deleteMutation = useDeleteCargo();
+function KanbanBoard() {
+  const { data: tickets, isLoading } = useTickets();
+  const updateTicket = useUpdateTicket();
+  const deleteTicket = useDeleteTicket();
   const [search, setSearch] = useState("");
+  const [selectedTicket, setSelectedTicket] = useState<TicketWithDetails | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [draggedTicket, setDraggedTicket] = useState<TicketWithDetails | null>(null);
 
-  // Filter cargos
-  const filteredCargos = cargos?.filter((cargo) => 
-    cargo.trackingNumber.toLowerCase().includes(search.toLowerCase()) ||
-    cargo.clientName.toLowerCase().includes(search.toLowerCase()) ||
-    cargo.origin.toLowerCase().includes(search.toLowerCase()) ||
-    cargo.destination.toLowerCase().includes(search.toLowerCase())
+  const filteredTickets = tickets?.filter((t) =>
+    t.trackingNumber.toLowerCase().includes(search.toLowerCase()) ||
+    t.clientName.toLowerCase().includes(search.toLowerCase()) ||
+    (t.origin || "").toLowerCase().includes(search.toLowerCase()) ||
+    (t.destination || "").toLowerCase().includes(search.toLowerCase())
   ) || [];
+
+  const handleDragStart = (e: React.DragEvent, ticket: TicketWithDetails) => {
+    setDraggedTicket(ticket);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTicket(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e: React.DragEvent, status: TicketStatus) => {
+    e.preventDefault();
+    if (draggedTicket && draggedTicket.status !== status) {
+      await updateTicket.mutateAsync({ id: draggedTicket.id, status });
+    }
+    setDraggedTicket(null);
+  };
 
   if (isLoading) {
     return (
-      <div className="w-full h-64 flex items-center justify-center border rounded-xl bg-card">
+      <div className="flex-1 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Search Bar */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input 
-          placeholder="Search shipments..." 
-          className="pl-9 bg-card"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+    <>
+      <div className="max-w-[1600px] mx-auto w-full mb-3">
+        <div className="relative max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar tickets..."
+            className="pl-9 bg-card"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            data-testid="input-search-tickets"
+          />
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="w-[180px]">Tracking Number</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Route</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>ETA</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredCargos.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                  No shipments found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredCargos.map((cargo) => (
-                <TableRow key={cargo.id} className="group hover:bg-muted/30">
-                  <TableCell className="font-medium font-mono text-primary">
-                    {cargo.trackingNumber}
-                  </TableCell>
-                  <TableCell>{cargo.clientName}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center text-sm">
-                      <span className="text-muted-foreground">{cargo.origin}</span>
-                      <span className="mx-2">→</span>
-                      <span className="font-medium">{cargo.destination}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`
-                      inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${cargo.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                        cargo.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-blue-100 text-blue-800'}
-                    `}>
-                      {cargo.status}
+      <div className="flex-1 max-w-[1600px] mx-auto w-full overflow-x-auto">
+        <div className="flex gap-4 min-w-[1000px] h-full pb-4">
+          {TICKET_STATUSES.map((status) => {
+            const columnTickets = filteredTickets.filter((t) => t.status === status);
+            return (
+              <div
+                key={status}
+                className={`flex-1 min-w-[240px] bg-card/50 rounded-xl border border-t-4 ${COLUMN_COLORS[status]} flex flex-col`}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, status)}
+                data-testid={`column-${status}`}
+              >
+                {/* Column Header */}
+                <div className="p-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 rounded-full ${COLUMN_DOT_COLORS[status]}`} />
+                    <h3 className="font-semibold text-sm">{status}</h3>
+                    <span className="bg-muted text-muted-foreground text-xs font-medium px-2 py-0.5 rounded-full">
+                      {columnTickets.length}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    {cargo.estimatedDelivery ? (
-                      format(new Date(cargo.estimatedDelivery), "MMM d, yyyy")
-                    ) : (
-                      <span className="text-muted-foreground text-xs italic">N/A</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <CreateCargoDialog 
-                          existingCargo={cargo} 
-                          trigger={
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <Pencil className="mr-2 h-4 w-4" /> Edit
-                            </DropdownMenuItem>
-                          }
-                        />
-                        <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => setDeleteId(cargo.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  </div>
+                  <CreateTicketDialog
+                    defaultStatus={status}
+                    trigger={
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <span className="text-lg leading-none">+</span>
+                      </Button>
+                    }
+                  />
+                </div>
+
+                {/* Cards */}
+                <ScrollArea className="flex-1 px-2 pb-2">
+                  <div className="space-y-2">
+                    {columnTickets.map((ticket) => (
+                      <div
+                        key={ticket.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, ticket)}
+                        onDragEnd={handleDragEnd}
+                        className="bg-card rounded-lg border p-3 cursor-pointer hover:border-primary/30 transition-colors group"
+                        onClick={() => setSelectedTicket(ticket)}
+                        data-testid={`ticket-card-${ticket.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-1 mb-2">
+                          <span className="text-xs font-mono text-primary font-semibold">{ticket.trackingNumber}</span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-3.5 w-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <CreateTicketDialog
+                                existingTicket={ticket}
+                                trigger={
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                                  </DropdownMenuItem>
+                                }
+                              />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={(e) => { e.stopPropagation(); setDeleteId(ticket.id); }}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        <p className="text-sm font-medium mb-1 line-clamp-1">{ticket.clientName}</p>
+
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{ticket.origin} → {ticket.destination}</span>
+                        </div>
+
+                        {ticket.notes && (
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{ticket.notes}</p>
+                        )}
+
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1 border-t">
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="w-3 h-3" />
+                            {ticket.comments?.length || 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Paperclip className="w-3 h-3" />
+                            {ticket.attachments?.length || 0}
+                          </span>
+                          {ticket.cargoType && (
+                            <span className="flex items-center gap-1 ml-auto">
+                              <Package className="w-3 h-3" />
+                              {ticket.cargoType}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      <TicketDetailDialog
+        ticket={selectedTicket}
+        open={!!selectedTicket}
+        onOpenChange={(open) => { if (!open) setSelectedTicket(null); }}
+      />
+
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Eliminar ticket</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the shipment record from the database.
+              Esta acción no se puede deshacer. Se eliminará el ticket y todos sus comentarios y archivos adjuntos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
-              className="bg-destructive hover:bg-destructive/90"
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteId && deleteTicket.mutate(deleteId)}
+              className="bg-destructive"
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteTicket.isPending ? "Eliminando..." : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
