@@ -1,8 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { db } from "./_db";
+import { users } from "../shared/models/auth";
+import { eq } from "drizzle-orm";
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || "change-me-in-production";
+const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 
 export interface AuthUser {
   id: string;
@@ -40,27 +43,47 @@ export function requireAuth(req: VercelRequest, res: VercelResponse): AuthUser |
 }
 
 export async function validateCredentials(email: string, password: string): Promise<AuthUser | null> {
+  // Look up user in database
+  const [dbUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+  if (dbUser) {
+    const isValid = await bcrypt.compare(password, dbUser.passwordHash);
+    if (!isValid) return null;
+    return {
+      id: dbUser.id,
+      email: dbUser.email,
+      firstName: dbUser.firstName || "",
+      lastName: dbUser.lastName || "",
+    };
+  }
+
+  // Fallback: env var admin (auto-creates in DB on first login)
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (!adminEmail || !adminPassword) {
-    return null;
+  if (adminEmail && adminPassword && email === adminEmail) {
+    const isValid = adminPassword.startsWith("$2")
+      ? await bcrypt.compare(password, adminPassword)
+      : password === adminPassword;
+
+    if (!isValid) return null;
+
+    // Auto-create admin user in DB so future logins use the DB
+    const hash = adminPassword.startsWith("$2")
+      ? adminPassword
+      : await bcrypt.hash(adminPassword, 10);
+
+    await db.insert(users).values({
+      email: adminEmail,
+      passwordHash: hash,
+      firstName: "Admin",
+      lastName: "",
+    }).onConflictDoNothing();
+
+    return { id: "admin", email: adminEmail, firstName: "Admin", lastName: "" };
   }
 
-  if (email !== adminEmail) return null;
-
-  const isValid = adminPassword.startsWith("$2")
-    ? await bcrypt.compare(password, adminPassword)
-    : password === adminPassword;
-
-  if (!isValid) return null;
-
-  return {
-    id: "admin",
-    email: adminEmail,
-    firstName: "Admin",
-    lastName: "",
-  };
+  return null;
 }
 
 export function setAuthCookie(res: VercelResponse, token: string) {
