@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const user = requireAuth(req, res);
   if (!user) return;
 
-  const id = Number(req.query.id);
+  const id = Number(req.query.ticketId);
   if (isNaN(id)) {
     return res.status(400).json({ message: "Invalid ticket ID" });
   }
