@@ -44,37 +44,6 @@ export function Navigation({ lang, setLang }: { lang?: 'en' | 'es', setLang?: (l
                 {lang === 'en' ? 'ES' : 'EN'}
               </Button>
             )}
-            {isAuthenticated ? (
-              <div className="flex items-center gap-4">
-                <Link href="/admin">
-                  <Button variant={location === "/admin" ? "secondary" : "ghost"} className="gap-2">
-                    <LayoutDashboard className="w-4 h-4" />
-                    {lang === 'en' ? 'Dashboard' : 'Panel'}
-                  </Button>
-                </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold border border-primary/20">
-                        {user?.firstName?.[0] || <User className="w-4 h-4" />}
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive">
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ) : (
-              <a href="/api/login">
-                <Button variant="default" className="shadow-lg shadow-primary/25 hover:shadow-primary/40">
-                  {lang === 'en' ? 'Employee Login' : 'Acceso Empleados'}
-                </Button>
-              </a>
-            )}
           </div>
         </div>
       </div>
