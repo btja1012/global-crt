@@ -1,27 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Globe, Shield, Clock, Ship, Plane, Truck, Phone, MapPin, Mail, Search, ArrowRight } from "lucide-react";
+import { Globe, Shield, Clock, Ship, Plane, Truck, Phone, MapPin, Mail } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { motion } from "framer-motion";
 import { SiWhatsapp } from "react-icons/si";
 
 export default function HomePage() {
-  const [trackingInput, setTrackingInput] = useState("");
-  const router = useRouter();
-
-  const handleTrackingSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (trackingInput.trim()) {
-      router.push(`/track?number=${encodeURIComponent(trackingInput.trim())}`);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navigation />
@@ -43,48 +30,31 @@ export default function HomePage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
               </span>
-              <span className="text-sm font-semibold tracking-wide uppercase">20 Años de Experiencia</span>
+              <span className="text-sm font-semibold tracking-wide uppercase">20 Years of Experience</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
-              Conectando <br />
+              Connecting <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                El Mundo
+                The World
               </span>
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
-              Global CR Transport: 20 años de excelencia en logística internacional.
-              Soluciones premium de importación y exportación para Costa Rica y el mundo.
+              Global CR Transport: 20 years of excellence in international logistics.
+              Premium import and export solutions for Costa Rica and the world.
             </p>
-
-            {/* Tracking Search Bar */}
-            <form onSubmit={handleTrackingSearch} className="flex gap-2 max-w-lg">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rastrear envío — Ej: CR-2025-0001"
-                  value={trackingInput}
-                  onChange={(e) => setTrackingInput(e.target.value)}
-                  className="pl-9 h-12 text-base bg-card border-border"
-                />
-              </div>
-              <Button type="submit" size="lg" className="h-12 px-5 gap-2" data-testid="button-track-hero">
-                <Search className="w-4 h-4" />
-                <span className="hidden sm:inline">Rastrear</span>
-              </Button>
-            </form>
 
             <div className="flex flex-wrap gap-3 pt-1">
               <a href="https://wa.me/50683996456" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-base font-semibold" data-testid="button-whatsapp-hero">
                   <SiWhatsapp className="w-5 h-5 text-green-500" />
-                  Contáctenos
+                  Contact Us
                 </Button>
               </a>
-              <a href="#servicios">
+              <a href="#services">
                 <Button variant="ghost" size="lg" className="h-12 px-6 text-base font-semibold" data-testid="button-services">
-                  Nuestros Servicios
+                  Our Services
                 </Button>
               </a>
             </div>
@@ -92,15 +62,15 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-4 pt-2 text-xs md:text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-primary" />
-                <span>Envío Seguro</span>
+                <span>Secure Shipping</span>
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-primary" />
-                <span>Alcance Global</span>
+                <span>Global Reach</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-primary" />
-                <span>Soporte 24/7</span>
+                <span>24/7 Support</span>
               </div>
             </div>
           </motion.div>
@@ -117,8 +87,8 @@ export default function HomePage() {
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-6 left-6 text-white">
-                <p className="font-bold text-lg">Transporte Marítimo</p>
-                <p className="text-white/80 text-sm">Servicio confiable de carga</p>
+                <p className="font-bold text-lg">Maritime Freight</p>
+                <p className="text-white/80 text-sm">Reliable cargo service</p>
               </div>
             </div>
 
@@ -129,7 +99,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">20+</p>
-                  <p className="text-sm text-muted-foreground">Años en el mercado</p>
+                  <p className="text-sm text-muted-foreground">Years in the market</p>
                 </div>
               </div>
             </div>
@@ -138,12 +108,12 @@ export default function HomePage() {
       </section>
 
       {/* Services Section */}
-      <section id="servicios" className="py-24 bg-secondary/30 scroll-mt-16">
+      <section id="services" className="py-24 bg-secondary/30 scroll-mt-16">
         <div className="container px-4 md:px-6 max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Nuestros Servicios</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Our Services</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Soluciones logísticas integrales adaptadas a sus necesidades.
+              Comprehensive logistics solutions tailored to your needs.
             </p>
           </div>
 
@@ -151,18 +121,18 @@ export default function HomePage() {
             {[
               {
                 icon: Ship,
-                title: "Transporte Marítimo",
-                desc: "Servicio eficiente y económico para grandes volúmenes de carga por vía marítima."
+                title: "Maritime Freight",
+                desc: "Efficient and cost-effective service for large cargo volumes by sea."
               },
               {
                 icon: Plane,
-                title: "Transporte Aéreo",
-                desc: "Envíos rápidos y confiables para mercancía que requiere entrega urgente."
+                title: "Air Freight",
+                desc: "Fast and reliable shipments for goods that require urgent delivery."
               },
               {
                 icon: Truck,
-                title: "Transporte Terrestre",
-                desc: "Conexión terrestre desde puertos hasta el destino final en Costa Rica y Centroamérica."
+                title: "Ground Transport",
+                desc: "Inland connection from ports to the final destination in Costa Rica and Central America."
               },
             ].map((service, i) => (
               <motion.div
@@ -185,14 +155,14 @@ export default function HomePage() {
       <section className="py-24">
         <div className="container px-4 md:px-6 max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">¿Por Qué Elegirnos?</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Why Choose Us?</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { value: "20+", label: "Años de experiencia" },
-              { value: "5000+", label: "Cargas transportadas" },
-              { value: "50+", label: "Países conectados" },
-              { value: "24/7", label: "Soporte al cliente" },
+              { value: "20+", label: "Years of experience" },
+              { value: "5000+", label: "Shipments handled" },
+              { value: "50+", label: "Connected countries" },
+              { value: "24/7", label: "Customer support" },
             ].map((stat, i) => (
               <motion.div
                 key={i}
@@ -211,51 +181,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-primary/5 border-y border-primary/10">
-        <div className="container max-w-4xl mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              ¿Tiene una carga en camino?
-            </h2>
-            <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-              Rastree su envío en tiempo real con nuestro sistema de seguimiento.
-            </p>
-            <Link href="/track">
-              <Button size="lg" className="gap-2 h-12 px-8 text-base font-semibold">
-                Rastrear Mi Envío
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
-          </motion.div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-foreground text-background py-12">
         <div className="container max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center sm:text-left">
           <div className="col-span-1 sm:col-span-2 flex flex-col items-center sm:items-start">
             <h3 className="text-2xl font-display font-bold mb-4">Global CR Transport</h3>
             <p className="text-white/60 max-w-xs">
-              Su socio de confianza en logística internacional y transporte de carga. 20 años de experiencia.
+              Your trusted partner in international logistics and cargo transportation. 20 years of experience.
             </p>
           </div>
           <div>
-            <h4 className="font-bold mb-4 text-primary">Servicios</h4>
+            <h4 className="font-bold mb-4 text-primary">Services</h4>
             <ul className="space-y-2 text-white/60">
-              <li>Transporte Marítimo</li>
-              <li>Transporte Aéreo</li>
-              <li>Despacho Aduanal</li>
-              <li>Almacenaje</li>
+              <li>Maritime Freight</li>
+              <li>Air Freight</li>
+              <li>Customs Clearance</li>
+              <li>Warehousing</li>
             </ul>
           </div>
           <div>
-            <h4 className="font-bold mb-4 text-primary">Contacto</h4>
+            <h4 className="font-bold mb-4 text-primary">Contact</h4>
             <ul className="space-y-2 text-white/60">
               <li className="flex items-center gap-2 justify-center sm:justify-start">
                 <MapPin className="w-4 h-4" /> San José, Costa Rica
@@ -270,7 +215,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="container max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-white/10 text-center text-white/40 text-sm">
-          © {new Date().getFullYear()} Global CR Transport. Todos los derechos reservados. | global-crt.com
+          © {new Date().getFullYear()} Global CR Transport. All rights reserved. | global-crt.com
         </div>
       </footer>
 

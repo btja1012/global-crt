@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Ship, LogOut, LayoutDashboard, User, Search } from "lucide-react";
+import { Ship, LogOut, LayoutDashboard, User } from "lucide-react";
 
 export function Navigation() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -37,19 +37,12 @@ export function Navigation() {
           </Link>
 
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <Link href="/track">
-              <Button variant="ghost" size="sm" className="gap-2" data-testid="link-track">
-                <Search className="w-4 h-4" />
-                <span className="hidden sm:inline">Rastrear Envío</span>
-              </Button>
-            </Link>
-
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <Link href="/admin">
                   <Button variant={location === "/admin" ? "secondary" : "ghost"} size="sm" className="gap-2" data-testid="link-dashboard">
                     <LayoutDashboard className="w-4 h-4" />
-                    <span className="hidden sm:inline">Panel</span>
+                    <span className="hidden sm:inline">Dashboard</span>
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -63,7 +56,7 @@ export function Navigation() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive" data-testid="button-logout">
                       <LogOut className="w-4 h-4 mr-2" />
-                      Cerrar Sesión
+                      Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -71,7 +64,7 @@ export function Navigation() {
             ) : (
               <Link href="/login">
                 <Button variant="default" size="sm" data-testid="button-login">
-                  Iniciar Sesión
+                  Sign In
                 </Button>
               </Link>
             )}
