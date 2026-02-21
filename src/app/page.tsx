@@ -76,7 +76,7 @@ export default function HomePage() {
             </form>
 
             <div className="flex flex-wrap gap-3 pt-1">
-              <a href="https://wa.me/50622222222" target="_blank" rel="noopener noreferrer">
+              <a href="https://wa.me/50683996456" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-base font-semibold" data-testid="button-whatsapp-hero">
                   <SiWhatsapp className="w-5 h-5 text-green-500" />
                   Contáctenos
@@ -261,22 +261,22 @@ export default function HomePage() {
                 <MapPin className="w-4 h-4" /> San José, Costa Rica
               </li>
               <li className="flex items-center gap-2 justify-center sm:justify-start">
-                <Mail className="w-4 h-4" /> info@global-crt.net
+                <Mail className="w-4 h-4" /> operaciones@global-crt.com
               </li>
               <li className="flex items-center gap-2 justify-center sm:justify-start">
-                <Phone className="w-4 h-4" /> +506 2222-2222
+                <Phone className="w-4 h-4" /> +506 8399-6456
               </li>
             </ul>
           </div>
         </div>
         <div className="container max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-white/10 text-center text-white/40 text-sm">
-          © {new Date().getFullYear()} Global CR Transport. Todos los derechos reservados. | global-crt.net
+          © {new Date().getFullYear()} Global CR Transport. Todos los derechos reservados. | global-crt.com
         </div>
       </footer>
 
       {/* Floating WhatsApp Button */}
       <a
-        href="https://wa.me/50622222222"
+        href="https://wa.me/50683996456"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 hover:scale-105 transition-all"
