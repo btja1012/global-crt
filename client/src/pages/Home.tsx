@@ -62,14 +62,14 @@ export default function Home() {
               <span className="text-sm font-semibold tracking-wide uppercase">Global Logistics Leader</span>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
               {lang === 'en' ? 'Connecting' : 'Conectando'} <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
                 {lang === 'en' ? 'The World' : 'El Mundo'}
               </span>
             </h1>
 
-            <p className="text-xl text-muted-foreground max-w-xl leading-relaxed">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
               {lang === 'en' 
                 ? "Global CR Transport: 20 years of excellence. Premium logistics solutions for Costa Rica and beyond. We handle your cargo with precision, care, and speed."
                 : "Global CR Transport: 20 años de excelencia. Soluciones logísticas premium para Costa Rica y el mundo. Manejamos su carga con precisión, cuidado y rapidez."
@@ -78,23 +78,23 @@ export default function Home() {
 
             {/* Tracking Card */}
             <Card className="p-2 mt-4 shadow-2xl shadow-primary/10 border-primary/10 bg-card/80 backdrop-blur-sm">
-              <form onSubmit={handleTrack} className="flex gap-2">
+              <form onSubmit={handleTrack} className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
                   <Input 
                     placeholder={lang === 'en' ? "Enter Tracking Number..." : "Ingrese número de guía..."} 
-                    className="pl-10 h-14 text-lg border-transparent focus:ring-0 bg-transparent"
+                    className="pl-10 h-12 md:h-14 text-base md:text-lg border-transparent focus:ring-0 bg-transparent"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
                   />
                 </div>
-                <Button size="lg" className="h-14 px-8 text-lg font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40">
+                <Button size="lg" className="h-12 md:h-14 px-8 text-base md:text-lg font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 w-full sm:w-auto">
                   {lang === 'en' ? 'Track' : 'Rastrear'}
                 </Button>
               </form>
             </Card>
 
-            <div className="flex gap-4 pt-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-4 pt-4 text-xs md:text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-primary" />
                 <span>{lang === 'en' ? 'Secure Shipping' : 'Envío Seguro'}</span>
@@ -205,8 +205,8 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-foreground text-background py-12">
-        <div className="container max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8">
-          <div className="col-span-1 md:col-span-2">
+        <div className="container max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center sm:text-left">
+          <div className="col-span-1 sm:col-span-2 flex flex-col items-center sm:items-start">
             <h3 className="text-2xl font-display font-bold mb-4">Global CR Transport</h3>
             <p className="text-white/60 max-w-xs">
               {lang === 'en' 
