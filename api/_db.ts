@@ -4,12 +4,10 @@ import * as schema from "../shared/schema";
 
 const { Pool } = pg;
 
-const pool = process.env.DATABASE_URL
-  ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      max: 3,
-    })
-  : null;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || "",
+  ssl: { rejectUnauthorized: false },
+  max: 3,
+});
 
-export const db = pool ? drizzle(pool, { schema }) : null;
+export const db = drizzle(pool, { schema });

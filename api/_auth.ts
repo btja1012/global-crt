@@ -43,24 +43,22 @@ export function requireAuth(req: VercelRequest, res: VercelResponse): AuthUser |
 }
 
 export async function validateCredentials(email: string, password: string): Promise<AuthUser | null> {
-  // Try DB first if available
-  if (db) {
-    try {
-      const [dbUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-      if (dbUser) {
-        const isValid = await bcrypt.compare(password, dbUser.passwordHash);
-        if (!isValid) return null;
-        return {
-          id: dbUser.id,
-          email: dbUser.email,
-          firstName: dbUser.firstName || "",
-          lastName: dbUser.lastName || "",
-        };
-      }
-    } catch (err) {
-      console.error("DB error in validateCredentials:", err);
-      // Fall through to env var check
+  // Try DB first
+  try {
+    const [dbUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (dbUser) {
+      const isValid = await bcrypt.compare(password, dbUser.passwordHash);
+      if (!isValid) return null;
+      return {
+        id: dbUser.id,
+        email: dbUser.email,
+        firstName: dbUser.firstName || "",
+        lastName: dbUser.lastName || "",
+      };
     }
+  } catch (err) {
+    console.error("DB error in validateCredentials:", err);
+    // Fall through to env var check
   }
 
   // Fallback: env var admin
@@ -76,21 +74,19 @@ export async function validateCredentials(email: string, password: string): Prom
 
   if (!isValid) return null;
 
-  // Auto-create admin in DB if available
-  if (db) {
-    try {
-      const hash = adminPassword.startsWith("$2")
-        ? adminPassword
-        : await bcrypt.hash(adminPassword, 10);
-      await db.insert(users).values({
-        email: adminEmail,
-        passwordHash: hash,
-        firstName: "Admin",
-        lastName: "",
-      }).onConflictDoNothing();
-    } catch {
-      // Non-critical, ignore
-    }
+  // Auto-create admin in DB
+  try {
+    const hash = adminPassword.startsWith("$2")
+      ? adminPassword
+      : await bcrypt.hash(adminPassword, 10);
+    await db.insert(users).values({
+      email: adminEmail,
+      passwordHash: hash,
+      firstName: "Admin",
+      lastName: "",
+    }).onConflictDoNothing();
+  } catch {
+    // Non-critical, ignore
   }
 
   return { id: "admin", email: adminEmail, firstName: "Admin", lastName: "" };
