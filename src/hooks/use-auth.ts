@@ -53,11 +53,13 @@ export function useAuth() {
         body: JSON.stringify({ email, password }),
         credentials: "include",
       });
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch {}
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message || "Credenciales inválidas");
       }
-      return res.json();
+      return data;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/auth/user"], data);
