@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Ship, LogOut, LayoutDashboard, User } from "lucide-react";
 
-export function Navigation() {
+export function Navigation({ lang, setLang }: { lang?: 'en' | 'es', setLang?: (l: 'en' | 'es') => void }) {
   const { user, logout, isAuthenticated } = useAuth();
   const [location] = useLocation();
 
@@ -34,12 +34,22 @@ export function Navigation() {
           </Link>
 
           <div className="flex items-center space-x-4">
+            {setLang && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+                className="text-xs font-bold"
+              >
+                {lang === 'en' ? 'ES' : 'EN'}
+              </Button>
+            )}
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
                 <Link href="/admin">
                   <Button variant={location === "/admin" ? "secondary" : "ghost"} className="gap-2">
                     <LayoutDashboard className="w-4 h-4" />
-                    Dashboard
+                    {lang === 'en' ? 'Dashboard' : 'Panel'}
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -61,7 +71,7 @@ export function Navigation() {
             ) : (
               <a href="/api/login">
                 <Button variant="default" className="shadow-lg shadow-primary/25 hover:shadow-primary/40">
-                  Employee Login
+                  {lang === 'en' ? 'Employee Login' : 'Acceso Empleados'}
                 </Button>
               </a>
             )}
