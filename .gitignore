@@ -26,3 +26,9 @@ pnpm-debug.log*
 # uploads (si aquí se guardan archivos reales)
 uploads/
 
+# Replit
+.replit
+replit.md
+prompt.md
+skills-lock.json
+
