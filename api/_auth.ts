@@ -43,47 +43,57 @@ export function requireAuth(req: VercelRequest, res: VercelResponse): AuthUser |
 }
 
 export async function validateCredentials(email: string, password: string): Promise<AuthUser | null> {
-  // Look up user in database
-  const [dbUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-
-  if (dbUser) {
-    const isValid = await bcrypt.compare(password, dbUser.passwordHash);
-    if (!isValid) return null;
-    return {
-      id: dbUser.id,
-      email: dbUser.email,
-      firstName: dbUser.firstName || "",
-      lastName: dbUser.lastName || "",
-    };
+  // Try DB first if available
+  if (db) {
+    try {
+      const [dbUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      if (dbUser) {
+        const isValid = await bcrypt.compare(password, dbUser.passwordHash);
+        if (!isValid) return null;
+        return {
+          id: dbUser.id,
+          email: dbUser.email,
+          firstName: dbUser.firstName || "",
+          lastName: dbUser.lastName || "",
+        };
+      }
+    } catch (err) {
+      console.error("DB error in validateCredentials:", err);
+      // Fall through to env var check
+    }
   }
 
-  // Fallback: env var admin (auto-creates in DB on first login)
+  // Fallback: env var admin
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (adminEmail && adminPassword && email === adminEmail) {
-    const isValid = adminPassword.startsWith("$2")
-      ? await bcrypt.compare(password, adminPassword)
-      : password === adminPassword;
+  if (!adminEmail || !adminPassword) return null;
+  if (email !== adminEmail) return null;
 
-    if (!isValid) return null;
+  const isValid = adminPassword.startsWith("$2")
+    ? await bcrypt.compare(password, adminPassword)
+    : password === adminPassword;
 
-    // Auto-create admin user in DB so future logins use the DB
-    const hash = adminPassword.startsWith("$2")
-      ? adminPassword
-      : await bcrypt.hash(adminPassword, 10);
+  if (!isValid) return null;
 
-    await db.insert(users).values({
-      email: adminEmail,
-      passwordHash: hash,
-      firstName: "Admin",
-      lastName: "",
-    }).onConflictDoNothing();
-
-    return { id: "admin", email: adminEmail, firstName: "Admin", lastName: "" };
+  // Auto-create admin in DB if available
+  if (db) {
+    try {
+      const hash = adminPassword.startsWith("$2")
+        ? adminPassword
+        : await bcrypt.hash(adminPassword, 10);
+      await db.insert(users).values({
+        email: adminEmail,
+        passwordHash: hash,
+        firstName: "Admin",
+        lastName: "",
+      }).onConflictDoNothing();
+    } catch {
+      // Non-critical, ignore
+    }
   }
 
-  return null;
+  return { id: "admin", email: adminEmail, firstName: "Admin", lastName: "" };
 }
 
 export function setAuthCookie(res: VercelResponse, token: string) {
