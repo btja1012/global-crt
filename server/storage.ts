@@ -1,38 +1,52 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { db } from "./db";
+import {
+  cargos,
+  type CreateCargoRequest,
+  type UpdateCargoRequest,
+  type CargoResponse
+} from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getCargos(): Promise<CargoResponse[]>;
+  getCargo(id: number): Promise<CargoResponse | undefined>;
+  getCargoByTracking(trackingNumber: string): Promise<CargoResponse | undefined>;
+  createCargo(cargo: CreateCargoRequest): Promise<CargoResponse>;
+  updateCargo(id: number, updates: UpdateCargoRequest): Promise<CargoResponse>;
+  deleteCargo(id: number): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  async getCargos(): Promise<CargoResponse[]> {
+    return await db.select().from(cargos);
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getCargo(id: number): Promise<CargoResponse | undefined> {
+    const [cargo] = await db.select().from(cargos).where(eq(cargos.id, id));
+    return cargo;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getCargoByTracking(trackingNumber: string): Promise<CargoResponse | undefined> {
+    const [cargo] = await db.select().from(cargos).where(eq(cargos.trackingNumber, trackingNumber));
+    return cargo;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async createCargo(cargo: CreateCargoRequest): Promise<CargoResponse> {
+    const [newCargo] = await db.insert(cargos).values(cargo).returning();
+    return newCargo;
+  }
+
+  async updateCargo(id: number, updates: UpdateCargoRequest): Promise<CargoResponse> {
+    const [updated] = await db.update(cargos)
+      .set(updates)
+      .where(eq(cargos.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCargo(id: number): Promise<void> {
+    await db.delete(cargos).where(eq(cargos.id, id));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

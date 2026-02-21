@@ -1,18 +1,26 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+export * from "./models/auth";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+export const cargos = pgTable("cargos", {
+  id: serial("id").primaryKey(),
+  trackingNumber: varchar("tracking_number", { length: 50 }).notNull().unique(),
+  clientName: text("client_name").notNull(),
+  origin: text("origin").notNull(),
+  destination: text("destination").notNull(),
+  status: text("status").notNull(), // 'Pending', 'In Transit', 'Customs', 'Delivered'
+  estimatedDelivery: timestamp("estimated_delivery"),
+  cargoType: text("cargo_type"), 
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
+export const insertCargoSchema = createInsertSchema(cargos).omit({ id: true, createdAt: true });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type Cargo = typeof cargos.$inferSelect;
+export type InsertCargo = z.infer<typeof insertCargoSchema>;
+
+export type CreateCargoRequest = InsertCargo;
+export type UpdateCargoRequest = Partial<InsertCargo>;
+export type CargoResponse = Cargo;
