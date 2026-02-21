@@ -4,10 +4,83 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Globe, Shield, Clock, Ship, Plane, Truck, Phone, MapPin, Mail } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
+import { useLanguage } from "@/lib/language-context";
 import { motion } from "framer-motion";
 import { SiWhatsapp } from "react-icons/si";
 
+const translations = {
+  es: {
+    badge: "20 Años de Experiencia",
+    heroTitle1: "Conectando",
+    heroTitle2: "El Mundo",
+    heroDesc: "Global CR Transport: 20 años de excelencia en logística internacional. Soluciones premium de importación y exportación para Costa Rica y el mundo.",
+    contactBtn: "Contáctenos",
+    servicesBtn: "Nuestros Servicios",
+    secureShipping: "Envío Seguro",
+    globalReach: "Alcance Global",
+    support: "Soporte 24/7",
+    freightLabel: "Transporte Marítimo",
+    freightSub: "Servicio confiable de carga",
+    yearsLabel: "Años en el mercado",
+    servicesTitle: "Nuestros Servicios",
+    servicesDesc: "Soluciones logísticas integrales adaptadas a sus necesidades.",
+    services: [
+      { title: "Transporte Marítimo", desc: "Servicio eficiente y económico para grandes volúmenes de carga por vía marítima." },
+      { title: "Transporte Aéreo", desc: "Envíos rápidos y confiables para mercancía que requiere entrega urgente." },
+      { title: "Transporte Terrestre", desc: "Conexión terrestre desde puertos hasta el destino final en Costa Rica y Centroamérica." },
+    ],
+    whyTitle: "¿Por Qué Elegirnos?",
+    stats: [
+      { value: "20+", label: "Años de experiencia" },
+      { value: "5000+", label: "Cargas transportadas" },
+      { value: "50+", label: "Países conectados" },
+      { value: "24/7", label: "Soporte al cliente" },
+    ],
+    footerDesc: "Su socio de confianza en logística internacional y transporte de carga. 20 años de experiencia.",
+    footerServices: "Servicios",
+    footerServicesList: ["Transporte Marítimo", "Transporte Aéreo", "Despacho Aduanal", "Almacenaje"],
+    footerContact: "Contacto",
+    footerRights: "Todos los derechos reservados",
+  },
+  en: {
+    badge: "20 Years of Experience",
+    heroTitle1: "Connecting",
+    heroTitle2: "The World",
+    heroDesc: "Global CR Transport: 20 years of excellence in international logistics. Premium import and export solutions for Costa Rica and the world.",
+    contactBtn: "Contact Us",
+    servicesBtn: "Our Services",
+    secureShipping: "Secure Shipping",
+    globalReach: "Global Reach",
+    support: "24/7 Support",
+    freightLabel: "Maritime Freight",
+    freightSub: "Reliable cargo service",
+    yearsLabel: "Years in the market",
+    servicesTitle: "Our Services",
+    servicesDesc: "Comprehensive logistics solutions tailored to your needs.",
+    services: [
+      { title: "Maritime Freight", desc: "Efficient and cost-effective service for large cargo volumes by sea." },
+      { title: "Air Freight", desc: "Fast and reliable shipments for goods that require urgent delivery." },
+      { title: "Ground Transport", desc: "Inland connection from ports to the final destination in Costa Rica and Central America." },
+    ],
+    whyTitle: "Why Choose Us?",
+    stats: [
+      { value: "20+", label: "Years of experience" },
+      { value: "5000+", label: "Shipments handled" },
+      { value: "50+", label: "Connected countries" },
+      { value: "24/7", label: "Customer support" },
+    ],
+    footerDesc: "Your trusted partner in international logistics and cargo transportation. 20 years of experience.",
+    footerServices: "Services",
+    footerServicesList: ["Maritime Freight", "Air Freight", "Customs Clearance", "Warehousing"],
+    footerContact: "Contact",
+    footerRights: "All rights reserved",
+  },
+};
+
 export default function HomePage() {
+  const { lang } = useLanguage();
+  const t = translations[lang];
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navigation />
@@ -29,31 +102,30 @@ export default function HomePage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
               </span>
-              <span className="text-xs sm:text-sm font-semibold tracking-wide uppercase">20 Years of Experience</span>
+              <span className="text-xs sm:text-sm font-semibold tracking-wide uppercase">{t.badge}</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
-              Connecting <br />
+              {t.heroTitle1} <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                The World
+                {t.heroTitle2}
               </span>
             </h1>
 
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
-              Global CR Transport: 20 years of excellence in international logistics.
-              Premium import and export solutions for Costa Rica and the world.
+              {t.heroDesc}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <a href="https://wa.me/50683996456" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-base font-semibold w-full sm:w-auto" data-testid="button-whatsapp-hero">
                   <SiWhatsapp className="w-5 h-5 text-green-500" />
-                  Contact Us
+                  {t.contactBtn}
                 </Button>
               </a>
               <a href="#services" className="w-full sm:w-auto">
                 <Button variant="ghost" size="lg" className="h-12 px-6 text-base font-semibold w-full sm:w-auto" data-testid="button-services">
-                  Our Services
+                  {t.servicesBtn}
                 </Button>
               </a>
             </div>
@@ -61,15 +133,15 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-1 text-xs md:text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-primary flex-shrink-0" />
-                <span>Secure Shipping</span>
+                <span>{t.secureShipping}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-primary flex-shrink-0" />
-                <span>Global Reach</span>
+                <span>{t.globalReach}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-primary flex-shrink-0" />
-                <span>24/7 Support</span>
+                <span>{t.support}</span>
               </div>
             </div>
           </motion.div>
@@ -86,8 +158,8 @@ export default function HomePage() {
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-6 left-6 text-white">
-                <p className="font-bold text-lg">Maritime Freight</p>
-                <p className="text-white/80 text-sm">Reliable cargo service</p>
+                <p className="font-bold text-lg">{t.freightLabel}</p>
+                <p className="text-white/80 text-sm">{t.freightSub}</p>
               </div>
             </div>
 
@@ -98,7 +170,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">20+</p>
-                  <p className="text-sm text-muted-foreground">Years in the market</p>
+                  <p className="text-sm text-muted-foreground">{t.yearsLabel}</p>
                 </div>
               </div>
             </div>
@@ -110,40 +182,22 @@ export default function HomePage() {
       <section id="services" className="py-16 md:py-24 bg-secondary/30 scroll-mt-16">
         <div className="container px-4 md:px-6 max-w-7xl mx-auto">
           <div className="text-center mb-10 md:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">Our Services</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
-              Comprehensive logistics solutions tailored to your needs.
-            </p>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">{t.servicesTitle}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">{t.servicesDesc}</p>
           </div>
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-8">
-            {[
-              {
-                icon: Ship,
-                title: "Maritime Freight",
-                desc: "Efficient and cost-effective service for large cargo volumes by sea."
-              },
-              {
-                icon: Plane,
-                title: "Air Freight",
-                desc: "Fast and reliable shipments for goods that require urgent delivery."
-              },
-              {
-                icon: Truck,
-                title: "Ground Transport",
-                desc: "Inland connection from ports to the final destination in Costa Rica and Central America."
-              },
-            ].map((service, i) => (
+            {[Ship, Plane, Truck].map((Icon, i) => (
               <motion.div
                 key={i}
                 whileHover={{ y: -5 }}
                 className="bg-card p-6 md:p-8 rounded-2xl border shadow-sm hover:shadow-xl transition-all"
               >
                 <div className="w-12 h-12 md:w-14 md:h-14 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-5">
-                  <service.icon className="w-6 h-6 md:w-7 md:h-7" />
+                  <Icon className="w-6 h-6 md:w-7 md:h-7" />
                 </div>
-                <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">{service.title}</h3>
-                <p className="text-muted-foreground leading-relaxed text-sm md:text-base">{service.desc}</p>
+                <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">{t.services[i].title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm md:text-base">{t.services[i].desc}</p>
               </motion.div>
             ))}
           </div>
@@ -154,15 +208,10 @@ export default function HomePage() {
       <section className="py-16 md:py-24">
         <div className="container px-4 md:px-6 max-w-7xl mx-auto">
           <div className="text-center mb-10 md:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">Why Choose Us?</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">{t.whyTitle}</h2>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {[
-              { value: "20+", label: "Years of experience" },
-              { value: "5000+", label: "Shipments handled" },
-              { value: "50+", label: "Connected countries" },
-              { value: "24/7", label: "Customer support" },
-            ].map((stat, i) => (
+            {t.stats.map((stat, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
@@ -185,21 +234,16 @@ export default function HomePage() {
         <div className="container max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center sm:text-left">
           <div className="col-span-1 sm:col-span-2 flex flex-col items-center sm:items-start">
             <h3 className="text-xl md:text-2xl font-display font-bold mb-4">Global CR Transport</h3>
-            <p className="text-white/60 max-w-xs text-sm md:text-base">
-              Your trusted partner in international logistics and cargo transportation. 20 years of experience.
-            </p>
+            <p className="text-white/60 max-w-xs text-sm md:text-base">{t.footerDesc}</p>
           </div>
           <div>
-            <h4 className="font-bold mb-4 text-primary">Services</h4>
+            <h4 className="font-bold mb-4 text-primary">{t.footerServices}</h4>
             <ul className="space-y-2 text-white/60 text-sm">
-              <li>Maritime Freight</li>
-              <li>Air Freight</li>
-              <li>Customs Clearance</li>
-              <li>Warehousing</li>
+              {t.footerServicesList.map((s) => <li key={s}>{s}</li>)}
             </ul>
           </div>
           <div>
-            <h4 className="font-bold mb-4 text-primary">Contact</h4>
+            <h4 className="font-bold mb-4 text-primary">{t.footerContact}</h4>
             <ul className="space-y-3 text-white/60 text-sm">
               <li className="flex items-center gap-2 justify-center sm:justify-start">
                 <MapPin className="w-4 h-4 flex-shrink-0" /> San José, Costa Rica
@@ -215,7 +259,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="container max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-white/10 text-center text-white/40 text-xs md:text-sm">
-          © {new Date().getFullYear()} Global CR Transport. All rights reserved. | global-crt.com
+          © {new Date().getFullYear()} Global CR Transport. {t.footerRights}. | global-crt.com
         </div>
       </footer>
 

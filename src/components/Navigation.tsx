@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/lib/language-context";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,11 +14,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Ship, LogOut, LayoutDashboard, User, Menu, X } from "lucide-react";
 
+const navT = {
+  es: {
+    services: "Servicios",
+    contact: "Contacto",
+    signIn: "Iniciar Sesión",
+    signOut: "Cerrar Sesión",
+    dashboard: "Panel",
+  },
+  en: {
+    services: "Services",
+    contact: "Contact",
+    signIn: "Sign In",
+    signOut: "Sign Out",
+    dashboard: "Dashboard",
+  },
+};
+
 export function Navigation() {
   const { user, logout, isAuthenticated } = useAuth();
   const location = usePathname();
+  const { lang, toggleLang } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const t = navT[lang];
   const isTransparent = location === "/";
   const isHome = location === "/";
 
@@ -41,24 +61,34 @@ export function Navigation() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden md:flex items-center space-x-2">
             {isHome && (
               <>
                 <a href="#services">
-                  <Button variant="ghost" size="sm">Services</Button>
+                  <Button variant="ghost" size="sm">{t.services}</Button>
                 </a>
                 <a href="#contact">
-                  <Button variant="ghost" size="sm">Contact</Button>
+                  <Button variant="ghost" size="sm">{t.contact}</Button>
                 </a>
               </>
             )}
+
+            {/* Language toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleLang}
+              className="font-semibold text-xs tracking-widest px-3"
+            >
+              {lang === "es" ? "EN" : "ES"}
+            </Button>
 
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <Link href="/admin">
                   <Button variant={location === "/admin" ? "secondary" : "ghost"} size="sm" className="gap-2" data-testid="link-dashboard">
                     <LayoutDashboard className="w-4 h-4" />
-                    Dashboard
+                    {t.dashboard}
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -72,23 +102,33 @@ export function Navigation() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive" data-testid="button-logout">
                       <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
+                      {t.signOut}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             ) : (
               <Link href="/login">
-                <Button variant="default" size="sm" data-testid="button-login">Sign In</Button>
+                <Button variant="default" size="sm" data-testid="button-login">{t.signIn}</Button>
               </Link>
             )}
           </div>
 
-          {/* Mobile: sign in + hamburger */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* Mobile right side */}
+          <div className="flex md:hidden items-center gap-1">
+            {/* Language toggle mobile */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleLang}
+              className="font-semibold text-xs tracking-widest px-2"
+            >
+              {lang === "es" ? "EN" : "ES"}
+            </Button>
+
             {!isAuthenticated && (
               <Link href="/login">
-                <Button variant="default" size="sm" data-testid="button-login">Sign In</Button>
+                <Button variant="default" size="sm" data-testid="button-login">{t.signIn}</Button>
               </Link>
             )}
             {isAuthenticated && (
@@ -116,10 +156,10 @@ export function Navigation() {
           {isHome && (
             <>
               <a href="#services" onClick={() => setMobileOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">Services</Button>
+                <Button variant="ghost" className="w-full justify-start">{t.services}</Button>
               </a>
               <a href="#contact" onClick={() => setMobileOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">Contact</Button>
+                <Button variant="ghost" className="w-full justify-start">{t.contact}</Button>
               </a>
             </>
           )}
@@ -130,7 +170,7 @@ export function Navigation() {
               onClick={() => { logout(); setMobileOpen(false); }}
             >
               <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              {t.signOut}
             </Button>
           )}
         </div>
