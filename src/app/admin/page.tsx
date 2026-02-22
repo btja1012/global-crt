@@ -2,16 +2,12 @@
 
 import { useState } from "react";
 import { useTickets, useUpdateTicket, useDeleteTicket } from "@/hooks/use-tickets";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navigation } from "@/components/Navigation";
 import { CreateTicketDialog } from "@/components/CreateTicketDialog";
 import { TicketDetailDialog } from "@/components/TicketDetailDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Search, MoreHorizontal, Pencil, Trash2, MessageSquare, Paperclip, MapPin, Package, UserPlus, Users } from "lucide-react";
+import { Loader2, Search, MoreHorizontal, Pencil, Trash2, MessageSquare, Paperclip, MapPin, Package } from "lucide-react";
 import { TICKET_STATUSES, type TicketWithDetails, type TicketStatus } from "@shared/schema";
 
 const COLUMN_COLORS: Record<string, string> = {
@@ -60,182 +56,12 @@ export default function AdminPage() {
         </div>
 
         <div className="max-w-[1600px] mx-auto w-full flex-1 flex flex-col">
-          <Tabs defaultValue="tickets" className="flex-1 flex flex-col">
-            <TabsList className="w-fit mb-4">
-              <TabsTrigger value="tickets" className="gap-2">
-                <Package className="w-4 h-4" /> Tickets
-              </TabsTrigger>
-              <TabsTrigger value="usuarios" className="gap-2">
-                <Users className="w-4 h-4" /> Usuarios
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="tickets" className="flex-1 flex flex-col mt-0">
-              <div className="flex justify-end mb-3">
-                <CreateTicketDialog />
-              </div>
-              <KanbanBoard />
-            </TabsContent>
-
-            <TabsContent value="usuarios" className="mt-0">
-              <UsersPanel />
-            </TabsContent>
-          </Tabs>
+          <div className="flex justify-end mb-3">
+            <CreateTicketDialog />
+          </div>
+          <KanbanBoard />
         </div>
       </main>
-    </div>
-  );
-}
-
-interface AdminUser {
-  id: string;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  createdAt: string;
-}
-
-function UsersPanel() {
-  const queryClient = useQueryClient();
-  const [form, setForm] = useState({ email: "", password: "", firstName: "", lastName: "" });
-  const [error, setError] = useState("");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  const { data: users = [], isLoading } = useQuery<AdminUser[]>({
-    queryKey: ["/api/auth/users"],
-    queryFn: async () => {
-      const res = await fetch("/api/auth/users", { credentials: "include" });
-      if (!res.ok) throw new Error("Error al cargar usuarios");
-      return res.json();
-    },
-  });
-
-  const createUser = useMutation({
-    mutationFn: async (data: typeof form) => {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(data),
-      });
-      const text = await res.text();
-      let json: any = {};
-      try { json = JSON.parse(text); } catch {}
-      if (!res.ok) throw new Error(json.message || "Error al crear usuario");
-      return json;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/users"] });
-      setForm({ email: "", password: "", firstName: "", lastName: "" });
-      setError("");
-    },
-    onError: (e: any) => setError(e.message),
-  });
-
-  const deleteUser = useMutation({
-    mutationFn: async (id: string) => {
-      await fetch(`/api/auth/users?id=${id}`, { method: "DELETE", credentials: "include" });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/users"] });
-      setDeleteId(null);
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    createUser.mutate(form);
-  };
-
-  return (
-    <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
-      {/* Add user form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <UserPlus className="w-5 h-5" /> Agregar Usuario
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            {error && (
-              <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 px-3 py-2 rounded-lg">{error}</p>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Nombre</Label>
-                <Input placeholder="Juan" value={form.firstName} onChange={(e) => setForm(f => ({ ...f, firstName: e.target.value }))} />
-              </div>
-              <div className="space-y-1">
-                <Label>Apellido</Label>
-                <Input placeholder="Pérez" value={form.lastName} onChange={(e) => setForm(f => ({ ...f, lastName: e.target.value }))} />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label>Correo electrónico *</Label>
-              <Input type="email" placeholder="usuario@global-crt.com" required value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <Label>Contraseña *</Label>
-              <Input type="password" placeholder="••••••••" required value={form.password} onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))} />
-            </div>
-            <Button type="submit" className="w-full" disabled={createUser.isPending}>
-              {createUser.isPending ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Creando...</> : "Crear Usuario"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Users list */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Users className="w-5 h-5" /> Usuarios ({users.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-          ) : users.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No hay usuarios registrados</p>
-          ) : (
-            <div className="space-y-2">
-              {users.map((u) => (
-                <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                  <div>
-                    <p className="font-medium text-sm">{u.firstName || ""} {u.lastName || ""}</p>
-                    <p className="text-xs text-muted-foreground">{u.email}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive h-8 w-8"
-                    onClick={() => setDeleteId(u.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar usuario</AlertDialogTitle>
-            <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteId && deleteUser.mutate(deleteId)} className="bg-destructive">
-              {deleteUser.isPending ? "Eliminando..." : "Eliminar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

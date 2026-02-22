@@ -1,9 +1,5 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import { db } from "./server-db";
-import { users } from "../../shared/models/auth";
-import { eq } from "drizzle-orm";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 const IS_PROD = process.env.NODE_ENV === "production";
@@ -44,31 +40,21 @@ export function clearCookieHeader(): string {
   return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${IS_PROD ? "; Secure" : ""}`;
 }
 
+// Supports up to 2 users via environment variables:
+//   ADMIN_EMAIL / ADMIN_PASSWORD  (primary admin)
+//   USER2_EMAIL / USER2_PASSWORD  (optional second user)
 export async function validateCredentials(email: string, password: string): Promise<AuthUser | null> {
-  try {
-    const [dbUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (dbUser) {
-      const isValid = await bcrypt.compare(password, dbUser.passwordHash);
-      if (!isValid) return null;
-      return { id: dbUser.id, email: dbUser.email, firstName: dbUser.firstName || "", lastName: dbUser.lastName || "" };
-    }
-  } catch (err) {
-    console.error("DB error in validateCredentials:", err);
+  const accounts = [
+    { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD, id: "admin", firstName: "Admin", lastName: "" },
+    { email: process.env.USER2_EMAIL, password: process.env.USER2_PASSWORD, id: "user2", firstName: "Usuario", lastName: "2" },
+  ];
+
+  for (const acc of accounts) {
+    if (!acc.email || !acc.password) continue;
+    if (email !== acc.email) continue;
+    if (password !== acc.password) return null;
+    return { id: acc.id, email: acc.email, firstName: acc.firstName, lastName: acc.lastName };
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminEmail || !adminPassword || email !== adminEmail) return null;
-
-  const isValid = adminPassword.startsWith("$2")
-    ? await bcrypt.compare(password, adminPassword)
-    : password === adminPassword;
-  if (!isValid) return null;
-
-  try {
-    const hash = adminPassword.startsWith("$2") ? adminPassword : await bcrypt.hash(adminPassword, 10);
-    await db.insert(users).values({ email: adminEmail, passwordHash: hash, firstName: "Admin", lastName: "" }).onConflictDoNothing();
-  } catch {}
-
-  return { id: "admin", email: adminEmail, firstName: "Admin", lastName: "" };
+  return null;
 }
