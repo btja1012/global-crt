@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertTicketSchema, TICKET_STATUSES } from "@shared/schema";
+import { insertTicketSchema, TICKET_STATUSES, SERVICE_TYPES } from "@shared/schema";
 import { z } from "zod";
 import { useCreateTicket, useUpdateTicket } from "@/hooks/use-tickets";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
       destination: "",
       status: defaultStatus || "Nuevo",
       cargoType: "Contenedor",
+      serviceType: "Marítimo",
       notes: "",
       assignedTo: null,
     },
@@ -55,6 +56,7 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
         form.reset({
           ...existingTicket,
           cargoType: existingTicket.cargoType || "",
+          serviceType: existingTicket.serviceType || "Marítimo",
           notes: existingTicket.notes || "",
           assignedTo: existingTicket.assignedTo || null,
         });
@@ -66,6 +68,7 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
           destination: "",
           status: defaultStatus || "Nuevo",
           cargoType: "Contenedor",
+          serviceType: "Marítimo",
           notes: "",
           assignedTo: null,
         });
@@ -146,18 +149,32 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
                 </FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="cargoType" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo de Carga</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
-                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    {["Contenedor", "Pallet", "Caja", "Vehículo", "Otro"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="serviceType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Servicio</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {SERVICE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="cargoType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Carga</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {["Contenedor", "Pallet", "Caja", "Vehículo", "Otro"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
             <FormField control={form.control} name="notes" render={({ field }) => (
               <FormItem>
                 <FormLabel>Notas (Opcional)</FormLabel>

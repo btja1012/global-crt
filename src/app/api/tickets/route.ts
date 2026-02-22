@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       destination: body.destination,
       status: body.status,
       cargoType: body.cargoType || null,
+      serviceType: body.serviceType || null,
       notes: body.notes || null,
       assignedTo: body.assignedTo || null,
     }).returning();

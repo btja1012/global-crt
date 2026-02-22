@@ -27,17 +27,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ tick
     const { ticketId } = await params;
     const id = parseInt(ticketId);
     const body = await req.json();
-    const [updated] = await db.update(tickets).set({
-      trackingNumber: body.trackingNumber,
-      clientName: body.clientName,
-      origin: body.origin,
-      destination: body.destination,
-      status: body.status,
-      cargoType: body.cargoType || null,
-      notes: body.notes || null,
-      assignedTo: body.assignedTo || null,
-      updatedAt: new Date(),
-    }).where(eq(tickets.id, id)).returning();
+
+    // Build partial update — only include fields that were sent
+    const patch: Record<string, any> = { updatedAt: new Date() };
+    if (body.trackingNumber !== undefined) patch.trackingNumber = body.trackingNumber;
+    if (body.clientName !== undefined) patch.clientName = body.clientName;
+    if (body.origin !== undefined) patch.origin = body.origin;
+    if (body.destination !== undefined) patch.destination = body.destination;
+    if (body.status !== undefined) patch.status = body.status;
+    if (body.cargoType !== undefined) patch.cargoType = body.cargoType || null;
+    if (body.serviceType !== undefined) patch.serviceType = body.serviceType || null;
+    if (body.notes !== undefined) patch.notes = body.notes || null;
+    if (body.assignedTo !== undefined) patch.assignedTo = body.assignedTo || null;
+
+    const [updated] = await db.update(tickets).set(patch).where(eq(tickets.id, id)).returning();
     if (!updated) return NextResponse.json({ message: "Ticket not found" }, { status: 404 });
     return NextResponse.json(updated);
   } catch (err: any) {

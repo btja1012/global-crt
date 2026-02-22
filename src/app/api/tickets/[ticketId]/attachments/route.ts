@@ -17,8 +17,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tic
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-  const { ticketId } = await params;
-  const body = await req.json();
-  const [newAttachment] = await db.insert(attachments).values({ ...body, ticketId: parseInt(ticketId) }).returning();
-  return NextResponse.json(newAttachment, { status: 201 });
+  try {
+    const { ticketId } = await params;
+    const body = await req.json();
+    const [newAttachment] = await db.insert(attachments).values({
+      ticketId: parseInt(ticketId),
+      userId: user.id,
+      fileName: body.fileName,
+      fileUrl: body.fileData, // base64 data URL stored directly
+    }).returning();
+    return NextResponse.json(newAttachment, { status: 201 });
+  } catch (err: any) {
+    console.error("POST /attachments error:", err);
+    return NextResponse.json({ message: err?.message || "Error al subir archivo" }, { status: 500 });
+  }
 }

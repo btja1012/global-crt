@@ -17,8 +17,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tic
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-  const { ticketId } = await params;
-  const body = await req.json();
-  const [newComment] = await db.insert(comments).values({ ...body, ticketId: parseInt(ticketId) }).returning();
-  return NextResponse.json(newComment, { status: 201 });
+  try {
+    const { ticketId } = await params;
+    const body = await req.json();
+    const userName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+    const [newComment] = await db.insert(comments).values({
+      ticketId: parseInt(ticketId),
+      userId: user.id,
+      userName,
+      content: body.content,
+    }).returning();
+    return NextResponse.json(newComment, { status: 201 });
+  } catch (err: any) {
+    console.error("POST /comments error:", err);
+    return NextResponse.json({ message: err?.message || "Error al agregar comentario" }, { status: 500 });
+  }
 }

@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useAddComment, useUploadAttachment } from "@/hooks/use-tickets";
 import type { TicketWithDetails } from "@shared/schema";
-import { MessageSquare, Paperclip, Send, FileText, Loader2, MapPin, Package, Calendar } from "lucide-react";
+import { MessageSquare, Paperclip, Send, FileText, Loader2, MapPin, Package, Calendar, Truck } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -82,11 +82,20 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: Props) {
                 <span className="font-medium">{ticket.destination}</span>
               </div>
             </div>
+            {ticket.serviceType && (
+              <div className="flex items-center gap-2 text-sm">
+                <Truck className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <span className="text-muted-foreground">Servicio: </span>
+                  <span className="font-medium">{ticket.serviceType}</span>
+                </div>
+              </div>
+            )}
             {ticket.cargoType && (
               <div className="flex items-center gap-2 text-sm">
                 <Package className="w-4 h-4 text-muted-foreground" />
                 <div>
-                  <span className="text-muted-foreground">Tipo: </span>
+                  <span className="text-muted-foreground">Carga: </span>
                   <span className="font-medium">{ticket.cargoType}</span>
                 </div>
               </div>

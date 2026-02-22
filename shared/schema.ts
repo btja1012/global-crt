@@ -7,6 +7,9 @@ export * from "./models/auth";
 export const TICKET_STATUSES = ["Nuevo", "En Proceso", "Aduana", "En Tránsito", "Entregado"] as const;
 export type TicketStatus = typeof TICKET_STATUSES[number];
 
+export const SERVICE_TYPES = ["Marítimo", "Terrestre", "Aéreo", "Agencia Aduanal"] as const;
+export type ServiceType = typeof SERVICE_TYPES[number];
+
 export const tickets = pgTable("tickets", {
   id: serial("id").primaryKey(),
   trackingNumber: varchar("tracking_number", { length: 50 }).notNull().unique(),
@@ -15,6 +18,7 @@ export const tickets = pgTable("tickets", {
   destination: text("destination").notNull(),
   status: text("status").notNull().$type<TicketStatus>(),
   cargoType: text("cargo_type"),
+  serviceType: text("service_type").$type<ServiceType>(),
   notes: text("notes"),
   assignedTo: text("assigned_to"),
   createdAt: timestamp("created_at").defaultNow(),
