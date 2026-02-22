@@ -23,13 +23,27 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ tick
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-  const { ticketId } = await params;
-  const id = parseInt(ticketId);
-  const body = await req.json();
-  const [updated] = await db.update(tickets).set({ ...body, updatedAt: new Date() }).where(eq(tickets.id, id)).returning();
-  if (!updated) return NextResponse.json({ message: "Ticket not found" }, { status: 404 });
-
-  return NextResponse.json(updated);
+  try {
+    const { ticketId } = await params;
+    const id = parseInt(ticketId);
+    const body = await req.json();
+    const [updated] = await db.update(tickets).set({
+      trackingNumber: body.trackingNumber,
+      clientName: body.clientName,
+      origin: body.origin,
+      destination: body.destination,
+      status: body.status,
+      cargoType: body.cargoType || null,
+      notes: body.notes || null,
+      assignedTo: body.assignedTo || null,
+      updatedAt: new Date(),
+    }).where(eq(tickets.id, id)).returning();
+    if (!updated) return NextResponse.json({ message: "Ticket not found" }, { status: 404 });
+    return NextResponse.json(updated);
+  } catch (err: any) {
+    console.error("PUT /api/tickets error:", err);
+    return NextResponse.json({ message: err?.message || "Error al actualizar ticket" }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ ticketId: string }> }) {

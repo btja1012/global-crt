@@ -25,7 +25,21 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const [newTicket] = await db.insert(tickets).values(body).returning();
-  return NextResponse.json(newTicket, { status: 201 });
+  try {
+    const body = await req.json();
+    const [newTicket] = await db.insert(tickets).values({
+      trackingNumber: body.trackingNumber,
+      clientName: body.clientName,
+      origin: body.origin,
+      destination: body.destination,
+      status: body.status,
+      cargoType: body.cargoType || null,
+      notes: body.notes || null,
+      assignedTo: body.assignedTo || null,
+    }).returning();
+    return NextResponse.json(newTicket, { status: 201 });
+  } catch (err: any) {
+    console.error("POST /api/tickets error:", err);
+    return NextResponse.json({ message: err?.message || "Error al crear ticket" }, { status: 500 });
+  }
 }
