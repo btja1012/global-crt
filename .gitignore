@@ -32,3 +32,6 @@ replit.md
 prompt.md
 skills-lock.json
 
+# Old Vercel serverless functions (migrated to src/app/api/)
+/api/
+
