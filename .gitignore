@@ -35,3 +35,5 @@ skills-lock.json
 # Old Vercel serverless functions (migrated to src/app/api/)
 /api/
 
+.vercel
+.env*.local
