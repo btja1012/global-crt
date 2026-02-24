@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, varchar, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, varchar, integer, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -9,6 +9,12 @@ export type TicketStatus = typeof TICKET_STATUSES[number];
 
 export const SERVICE_TYPES = ["Marítimo", "Terrestre", "Aéreo", "Agencia Aduanal"] as const;
 export type ServiceType = typeof SERVICE_TYPES[number];
+
+export const DIRECTION_TYPES = ["Import", "Export"] as const;
+export type DirectionType = typeof DIRECTION_TYPES[number];
+
+export const LOAD_TYPES = ["FCL", "LCL"] as const;
+export type LoadType = typeof LOAD_TYPES[number];
 
 export const tickets = pgTable("tickets", {
   id: serial("id").primaryKey(),
@@ -23,6 +29,51 @@ export const tickets = pgTable("tickets", {
   assignedTo: text("assigned_to"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+
+  // --- Datos Generales ---
+  supplier: text("supplier"),
+  fiscalWarehouse: text("fiscal_warehouse"),
+  forwarder: text("forwarder"),
+
+  // --- Servicio ---
+  direction: text("direction").$type<DirectionType>(),
+  loadType: text("load_type").$type<LoadType>(),
+  agencyName: text("agency_name"),
+  requiresTransport: boolean("requires_transport").default(false),
+
+  // --- Embarque ---
+  supplierOrderNumber: text("supplier_order_number"),
+  transitTime: text("transit_time"),
+  etaPort: text("eta_port"),
+  blNumber: text("bl_number"),
+  awbNumber: text("awb_number"),
+  cpNumber: text("cp_number"),
+
+  // --- Aduana / DUCA ---
+  requiresInspection: boolean("requires_inspection").default(false),
+  requiresSenasa: boolean("requires_senasa").default(false),
+  requiresProcomer: boolean("requires_procomer").default(false),
+  policyReceiptNumber: text("policy_receipt_number"),
+  movementNumber: text("movement_number"),
+  requiresPrevioExamen: boolean("requires_previo_examen").default(false),
+  requiresRevisionAforador: boolean("requires_revision_aforador").default(false),
+
+  // --- Pagos Realizados ---
+  paidDucaT: boolean("paid_duca_t").default(false),
+  paidBodegaje: boolean("paid_bodegaje").default(false),
+  permitNumber: text("permit_number"),
+  paidExoneracion: boolean("paid_exoneracion").default(false),
+  paidTransporteInterno: boolean("paid_transporte_interno").default(false),
+  paidSeguro: boolean("paid_seguro").default(false),
+  paidDua: boolean("paid_dua").default(false),
+  paidRetiroDocumento: boolean("paid_retiro_documento").default(false),
+  paidTerceros: boolean("paid_terceros").default(false),
+
+  // --- Datos Financieros ---
+  invoiceNumber: text("invoice_number"),
+  hasTaxes: boolean("has_taxes").default(false),
+  liquidationNumber: text("liquidation_number"),
+  receiptNumber: text("receipt_number"),
 });
 
 export const comments = pgTable("comments", {

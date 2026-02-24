@@ -40,13 +40,17 @@ export function clearCookieHeader(): string {
   return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${IS_PROD ? "; Secure" : ""}`;
 }
 
-// Supports up to 2 users via environment variables:
+// Supports up to 4 users via environment variables:
 //   ADMIN_EMAIL / ADMIN_PASSWORD  (primary admin)
-//   USER2_EMAIL / USER2_PASSWORD  (optional second user)
+//   USER2_EMAIL / USER2_PASSWORD  (second admin)
+//   USER3_EMAIL / USER3_PASSWORD  (third admin)
+//   USER4_EMAIL / USER4_PASSWORD  (fourth admin)
 export async function validateCredentials(email: string, password: string): Promise<AuthUser | null> {
   const accounts = [
     { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD, id: "admin", firstName: "Admin", lastName: "" },
-    { email: process.env.USER2_EMAIL, password: process.env.USER2_PASSWORD, id: "user2", firstName: "Usuario", lastName: "2" },
+    { email: process.env.USER2_EMAIL, password: process.env.USER2_PASSWORD, id: "user2", firstName: "Admin", lastName: "2" },
+    { email: process.env.USER3_EMAIL, password: process.env.USER3_PASSWORD, id: "user3", firstName: "Admin", lastName: "3" },
+    { email: process.env.USER4_EMAIL, password: process.env.USER4_PASSWORD, id: "user4", firstName: "Admin", lastName: "4" },
   ];
 
   for (const acc of accounts) {
