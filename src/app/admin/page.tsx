@@ -51,7 +51,7 @@ export default function AdminPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 max-w-[1600px] mx-auto w-full">
           <div>
             <h1 className="text-2xl font-bold tracking-tight" data-testid="text-dashboard-title">Panel de Control</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Gestiona los tickets de carga y logística</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Gestiona las órdenes de ruteo de carga y logística</p>
           </div>
         </div>
 
@@ -118,7 +118,7 @@ function KanbanBoard() {
         <div className="relative max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar tickets..."
+            placeholder="Buscar órdenes..."
             className="pl-9 bg-card"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -249,9 +249,9 @@ function KanbanBoard() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar ticket</AlertDialogTitle>
+            <AlertDialogTitle>Eliminar orden de ruteo</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará el ticket y todos sus comentarios y archivos adjuntos.
+              Esta acción no se puede deshacer. Se eliminará la orden y todos sus comentarios y archivos adjuntos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

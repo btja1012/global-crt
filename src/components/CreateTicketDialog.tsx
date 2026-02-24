@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTicketSchema, TICKET_STATUSES, SERVICE_TYPES } from "@shared/schema";
 import { z } from "zod";
-import { useCreateTicket, useUpdateTicket } from "@/hooks/use-tickets";
+import { useCreateTicket, useUpdateTicket, useTickets } from "@/hooks/use-tickets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -33,6 +33,7 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
   const [open, setOpen] = useState(false);
   const createMutation = useCreateTicket();
   const updateMutation = useUpdateTicket();
+  const { data: allTickets } = useTickets();
   const isEditing = !!existingTicket;
 
   const form = useForm<FormValues>({
@@ -61,8 +62,12 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
           assignedTo: existingTicket.assignedTo || null,
         });
       } else {
+        const maxNum = allTickets && allTickets.length > 0
+          ? Math.max(0, ...allTickets.map(t => parseInt(t.trackingNumber) || 0))
+          : 4687;
+        const nextNumber = String(maxNum + 1);
         form.reset({
-          trackingNumber: `CR-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+          trackingNumber: nextNumber,
           clientName: "",
           origin: "",
           destination: "",
@@ -74,7 +79,7 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
         });
       }
     }
-  }, [open, existingTicket, form, defaultStatus]);
+  }, [open, existingTicket, form, defaultStatus, allTickets]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -95,20 +100,20 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
         {trigger || (
           <Button className="gap-2" data-testid="button-new-ticket">
             <Plus className="w-4 h-4" />
-            Nuevo Ticket
+            Nueva Orden
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Ticket" : "Crear Nuevo Ticket"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Orden" : "Nueva Orden de Ruteo"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="trackingNumber" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>No. Seguimiento</FormLabel>
+                  <FormLabel>No. Orden</FormLabel>
                   <FormControl><Input {...field} disabled={isEditing} data-testid="input-tracking-number" /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -186,7 +191,7 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={isPending} data-testid="button-submit-ticket">
                 {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {isEditing ? "Guardar" : "Crear Ticket"}
+                {isEditing ? "Guardar" : "Crear Orden"}
               </Button>
             </div>
           </form>
