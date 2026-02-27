@@ -3,13 +3,25 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
-import type { TicketWithDetails } from "@shared/schema";
+import type { TicketWithDetails, AuditLog, TicketStatus } from "@shared/schema";
 
-export function useTickets() {
+export interface TicketFilters {
+  search?: string;
+  serviceType?: string;
+  direction?: string;
+}
+
+export function useTickets(filters: TicketFilters = {}) {
+  const params = new URLSearchParams();
+  if (filters.search) params.set("search", filters.search);
+  if (filters.serviceType) params.set("serviceType", filters.serviceType);
+  if (filters.direction) params.set("direction", filters.direction);
+  const query = params.toString();
+
   return useQuery<TicketWithDetails[]>({
-    queryKey: ["/api/tickets"],
+    queryKey: ["/api/tickets", filters],
     queryFn: async () => {
-      const res = await fetch("/api/tickets", { credentials: "include" });
+      const res = await fetch(`/api/tickets${query ? `?${query}` : ""}`, { credentials: "include" });
       if (res.status === 401) throw new Error("401: Unauthorized");
       if (!res.ok) throw new Error("Failed to fetch tickets");
       return res.json();
@@ -27,6 +39,18 @@ export function useTicket(id: number) {
       return res.json();
     },
     enabled: !!id,
+  });
+}
+
+export function useTicketHistory(ticketId: number) {
+  return useQuery<AuditLog[]>({
+    queryKey: ["/api/tickets/history", ticketId],
+    queryFn: async () => {
+      const res = await fetch(`/api/tickets/${ticketId}/history`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch history");
+      return res.json();
+    },
+    enabled: !!ticketId,
   });
 }
 
@@ -49,7 +73,7 @@ export function useCreateTicket() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      toast({ title: "Ticket creado exitosamente" });
+      toast({ title: "Orden creada exitosamente" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -96,7 +120,34 @@ export function useDeleteTicket() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      toast({ title: "Ticket eliminado" });
+      toast({ title: "Orden eliminada" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useBulkTickets() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (payload: { ids: number[]; action: "delete" | "update"; status?: TicketStatus }) => {
+      const res = await fetch("/api/tickets/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Error en operación");
+      }
+      return res.json();
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      toast({ title: vars.action === "delete" ? "Órdenes eliminadas" : "Órdenes actualizadas" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -123,15 +174,6 @@ export function useAddComment() {
   });
 }
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 export function useDeleteComment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -149,6 +191,15 @@ export function useDeleteComment() {
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
+  });
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 

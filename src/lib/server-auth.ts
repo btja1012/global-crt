@@ -10,7 +10,7 @@ if (IS_PROD && !process.env.JWT_SECRET) {
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 const COOKIE_NAME = "auth_token";
-const COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
+const COOKIE_MAX_AGE = 8 * 60 * 60; // 8 hours
 
 export interface AuthUser {
   id: string;
@@ -20,7 +20,7 @@ export interface AuthUser {
 }
 
 export function signToken(user: AuthUser): string {
-  return jwt.sign(user, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign(user, JWT_SECRET, { expiresIn: "8h" });
 }
 
 export function verifyToken(token: string): AuthUser | null {

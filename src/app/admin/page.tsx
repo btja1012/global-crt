@@ -1,13 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useTickets, useUpdateTicket, useDeleteTicket } from "@/hooks/use-tickets";
+import { useState, useCallback } from "react";
+import { useTickets, useUpdateTicket, useDeleteTicket, useBulkTickets } from "@/hooks/use-tickets";
 import { Navigation } from "@/components/Navigation";
 import { CreateTicketDialog } from "@/components/CreateTicketDialog";
 import { TicketDetailDialog } from "@/components/TicketDetailDialog";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,10 +30,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Search, MoreHorizontal, Pencil, Trash2, MessageSquare, Paperclip, MapPin, Package, Download } from "lucide-react";
-import { TICKET_STATUSES, type TicketWithDetails, type TicketStatus } from "@shared/schema";
+import {
+  Loader2, Search, MoreHorizontal, Pencil, Trash2,
+  MessageSquare, Paperclip, MapPin, Package, Download,
+  CheckSquare, Square, X, ChevronDown,
+} from "lucide-react";
+import {
+  TICKET_STATUSES, SERVICE_TYPES, DIRECTION_TYPES,
+  type TicketWithDetails, type TicketStatus,
+} from "@shared/schema";
 
 const COLUMN_COLORS: Record<string, string> = {
   "Nuevo": "border-t-slate-400",
@@ -54,7 +70,6 @@ export default function AdminPage() {
             <p className="text-muted-foreground text-sm mt-0.5">Gestiona las órdenes de ruteo de carga y logística</p>
           </div>
         </div>
-
         <div className="max-w-[1600px] mx-auto w-full flex-1 flex flex-col">
           <div className="flex justify-end gap-2 mb-3">
             <Button
@@ -68,37 +83,82 @@ export default function AdminPage() {
             </Button>
             <CreateTicketDialog />
           </div>
-          <KanbanBoard />
+          <ErrorBoundary>
+            <KanbanBoard />
+          </ErrorBoundary>
         </div>
       </main>
     </div>
   );
 }
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useState(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  });
+  // Use useCallback pattern via effect
+  return debounced;
+}
+
 function KanbanBoard() {
-  const { data: tickets, isLoading } = useTickets();
-  const updateTicket = useUpdateTicket();
-  const deleteTicket = useDeleteTicket();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [serviceType, setServiceType] = useState("");
+  const [direction, setDirection] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<TicketWithDetails | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [draggedTicket, setDraggedTicket] = useState<TicketWithDetails | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
-  const filteredTickets = tickets?.filter((t) =>
-    t.trackingNumber.toLowerCase().includes(search.toLowerCase()) ||
-    t.clientName.toLowerCase().includes(search.toLowerCase()) ||
-    (t.origin || "").toLowerCase().includes(search.toLowerCase()) ||
-    (t.destination || "").toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  const { data: tickets, isLoading } = useTickets({
+    search: debouncedSearch,
+    serviceType,
+    direction,
+  });
+  const updateTicket = useUpdateTicket();
+  const deleteTicket = useDeleteTicket();
+  const bulkTickets = useBulkTickets();
+
+  // Debounce search — update after 400ms
+  const handleSearchChange = useCallback((val: string) => {
+    setSearch(val);
+    const t = setTimeout(() => setDebouncedSearch(val), 400);
+    return () => clearTimeout(t);
+  }, []);
+
+  const isSelecting = selectedIds.size > 0;
+
+  const toggleSelect = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkStatus = async (status: TicketStatus) => {
+    await bulkTickets.mutateAsync({ ids: Array.from(selectedIds), action: "update", status });
+    clearSelection();
+  };
+
+  const handleBulkDelete = async () => {
+    await bulkTickets.mutateAsync({ ids: Array.from(selectedIds), action: "delete" });
+    clearSelection();
+    setBulkDeleteOpen(false);
+  };
 
   const handleDragStart = (e: React.DragEvent, ticket: TicketWithDetails) => {
     setDraggedTicket(ticket);
     e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleDragEnd = () => {
-    setDraggedTicket(null);
-  };
+  const handleDragEnd = () => setDraggedTicket(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -121,25 +181,93 @@ function KanbanBoard() {
     );
   }
 
+  const hasFilters = debouncedSearch || serviceType || direction;
+
   return (
     <>
-      <div className="max-w-[1600px] mx-auto w-full mb-3">
-        <div className="relative max-w-xs">
+      {/* Filters bar */}
+      <div className="max-w-[1600px] mx-auto w-full mb-3 flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar órdenes..."
             className="pl-9 bg-card"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             data-testid="input-search-tickets"
           />
         </div>
+
+        <Select value={serviceType} onValueChange={setServiceType}>
+          <SelectTrigger className="w-[160px] bg-card">
+            <SelectValue placeholder="Tipo de servicio" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Todos los servicios</SelectItem>
+            {SERVICE_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select value={direction} onValueChange={setDirection}>
+          <SelectTrigger className="w-[130px] bg-card">
+            <SelectValue placeholder="Dirección" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Import / Export</SelectItem>
+            {DIRECTION_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        {hasFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1 text-muted-foreground"
+            onClick={() => { setSearch(""); setDebouncedSearch(""); setServiceType(""); setDirection(""); }}
+          >
+            <X className="w-3 h-3" /> Limpiar
+          </Button>
+        )}
       </div>
 
+      {/* Bulk action bar */}
+      {isSelecting && (
+        <div className="max-w-[1600px] mx-auto w-full mb-3 flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-4 py-2">
+          <span className="text-sm font-medium text-primary">{selectedIds.size} seleccionadas</span>
+          <div className="ml-auto flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1" disabled={bulkTickets.isPending}>
+                  Mover a <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {TICKET_STATUSES.map((s) => (
+                  <DropdownMenuItem key={s} onClick={() => handleBulkStatus(s)}>{s}</DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1"
+              onClick={() => setBulkDeleteOpen(true)}
+              disabled={bulkTickets.isPending}
+            >
+              <Trash2 className="w-3 h-3" /> Eliminar
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearSelection}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Kanban columns */}
       <div className="flex-1 max-w-[1600px] mx-auto w-full overflow-x-auto">
         <div className="flex gap-4 min-w-[1000px] h-full pb-4">
           {TICKET_STATUSES.map((status) => {
-            const columnTickets = filteredTickets.filter((t) => t.status === status);
+            const columnTickets = (tickets || []).filter((t) => t.status === status);
             return (
               <div
                 key={status}
@@ -148,7 +276,6 @@ function KanbanBoard() {
                 onDrop={(e) => handleDrop(e, status)}
                 data-testid={`column-${status}`}
               >
-                {/* Column Header */}
                 <div className="p-3 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <div className={`w-2.5 h-2.5 rounded-full ${COLUMN_DOT_COLORS[status]}`} />
@@ -167,7 +294,6 @@ function KanbanBoard() {
                   />
                 </div>
 
-                {/* Cards */}
                 <ScrollArea className="flex-1 px-2 pb-2">
                   <div className="space-y-2">
                     {columnTickets.length === 0 && (
@@ -176,77 +302,94 @@ function KanbanBoard() {
                         <p className="text-xs">Sin órdenes</p>
                       </div>
                     )}
-                    {columnTickets.map((ticket) => (
-                      <div
-                        key={ticket.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, ticket)}
-                        onDragEnd={handleDragEnd}
-                        className="bg-card rounded-lg border p-3 cursor-pointer hover:border-primary/30 transition-colors group"
-                        onClick={() => setSelectedTicket(ticket)}
-                        data-testid={`ticket-card-${ticket.id}`}
-                      >
-                        <div className="flex items-start justify-between gap-1 mb-2">
-                          <span className="text-xs font-mono text-primary font-semibold">{ticket.trackingNumber}</span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={(e) => e.stopPropagation()}
+                    {columnTickets.map((ticket) => {
+                      const isSelected = selectedIds.has(ticket.id);
+                      return (
+                        <div
+                          key={ticket.id}
+                          draggable={!isSelecting}
+                          onDragStart={(e) => handleDragStart(e, ticket)}
+                          onDragEnd={handleDragEnd}
+                          className={`bg-card rounded-lg border p-3 cursor-pointer transition-colors group ${
+                            isSelected ? "border-primary/60 bg-primary/5" : "hover:border-primary/30"
+                          }`}
+                          onClick={() => isSelecting ? toggleSelect(ticket.id, { stopPropagation: () => {} } as any) : setSelectedTicket(ticket)}
+                          data-testid={`ticket-card-${ticket.id}`}
+                        >
+                          <div className="flex items-start justify-between gap-1 mb-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <button
+                                onClick={(e) => toggleSelect(ticket.id, e)}
+                                className="flex-shrink-0 text-muted-foreground hover:text-primary transition-colors"
                               >
-                                <MoreHorizontal className="h-3.5 w-3.5" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <CreateTicketDialog
-                                existingTicket={ticket}
-                                trigger={
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Pencil className="mr-2 h-4 w-4" /> Editar
-                                  </DropdownMenuItem>
+                                {isSelected
+                                  ? <CheckSquare className="w-3.5 h-3.5 text-primary" />
+                                  : <Square className="w-3.5 h-3.5 opacity-0 group-hover:opacity-60" />
                                 }
-                              />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={(e) => { e.stopPropagation(); setDeleteId(ticket.id); }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                              </button>
+                              <span className="text-xs font-mono text-primary font-semibold truncate">{ticket.trackingNumber}</span>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <CreateTicketDialog
+                                  existingTicket={ticket}
+                                  trigger={
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                      <Pencil className="mr-2 h-4 w-4" /> Editar
+                                    </DropdownMenuItem>
+                                  }
+                                />
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={(e) => { e.stopPropagation(); setDeleteId(ticket.id); }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
 
-                        <p className="text-sm font-medium mb-1 line-clamp-1">{ticket.clientName}</p>
+                          <p className="text-sm font-medium mb-1 line-clamp-1">{ticket.clientName}</p>
 
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                          <MapPin className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">{ticket.origin} → {ticket.destination}</span>
-                        </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{ticket.origin} → {ticket.destination}</span>
+                          </div>
 
-                        {ticket.notes && (
-                          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{ticket.notes}</p>
-                        )}
-
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1 border-t">
-                          <span className="flex items-center gap-1">
-                            <MessageSquare className="w-3 h-3" />
-                            {ticket.comments?.length || 0}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Paperclip className="w-3 h-3" />
-                            {ticket.attachments?.length || 0}
-                          </span>
-                          {ticket.cargoType && (
-                            <span className="flex items-center gap-1 ml-auto">
-                              <Package className="w-3 h-3" />
-                              {ticket.cargoType}
-                            </span>
+                          {ticket.notes && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{ticket.notes}</p>
                           )}
+
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1 border-t">
+                            <span className="flex items-center gap-1">
+                              <MessageSquare className="w-3 h-3" />
+                              {ticket.comments?.length || 0}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Paperclip className="w-3 h-3" />
+                              {ticket.attachments?.length || 0}
+                            </span>
+                            {ticket.cargoType && (
+                              <span className="flex items-center gap-1 ml-auto">
+                                <Package className="w-3 h-3" />
+                                {ticket.cargoType}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               </div>
@@ -261,12 +404,13 @@ function KanbanBoard() {
         onOpenChange={(open) => { if (!open) setSelectedTicket(null); }}
       />
 
+      {/* Single delete */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar orden de ruteo</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará la orden y todos sus comentarios y archivos adjuntos.
+              La orden será eliminada y podrá ser recuperada si es necesario.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -276,6 +420,24 @@ function KanbanBoard() {
               className="bg-destructive"
             >
               {deleteTicket.isPending ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar {selectedIds.size} órdenes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán {selectedIds.size} órdenes seleccionadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive">
+              {bulkTickets.isPending ? "Eliminando..." : "Eliminar todo"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

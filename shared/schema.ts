@@ -29,6 +29,7 @@ export const tickets = pgTable("tickets", {
   assignedTo: text("assigned_to"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 
   // --- Datos Generales ---
   supplier: text("supplier"),
@@ -77,6 +78,7 @@ export const tickets = pgTable("tickets", {
 }, (table) => [
   index("idx_tickets_status").on(table.status),
   index("idx_tickets_created_at").on(table.createdAt),
+  index("idx_tickets_deleted_at").on(table.deletedAt),
 ]);
 
 export const comments = pgTable("comments", {
@@ -101,9 +103,22 @@ export const attachments = pgTable("attachments", {
   index("idx_attachments_ticket_id").on(table.ticketId),
 ]);
 
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  userName: text("user_name").notNull(),
+  action: text("action").notNull(), // "updated" | "deleted" | "restored"
+  changes: text("changes"), // JSON string of { field, oldValue, newValue }[]
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_audit_logs_ticket_id").on(table.ticketId),
+]);
+
 export const ticketsRelations = relations(tickets, ({ many }) => ({
   comments: many(comments),
   attachments: many(attachments),
+  auditLogs: many(auditLogs),
 }));
 
 export const commentsRelations = relations(comments, ({ one }) => ({
@@ -114,7 +129,11 @@ export const attachmentsRelations = relations(attachments, ({ one }) => ({
   ticket: one(tickets, { fields: [attachments.ticketId], references: [tickets.id] }),
 }));
 
-export const insertTicketSchema = createInsertSchema(tickets).omit({ id: true, createdAt: true, updatedAt: true });
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  ticket: one(tickets, { fields: [auditLogs.ticketId], references: [tickets.id] }),
+}));
+
+export const insertTicketSchema = createInsertSchema(tickets).omit({ id: true, createdAt: true, updatedAt: true, deletedAt: true });
 export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true });
 export const insertAttachmentSchema = createInsertSchema(attachments).omit({ id: true, createdAt: true });
 
@@ -124,6 +143,7 @@ export type Comment = typeof comments.$inferSelect;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Attachment = typeof attachments.$inferSelect;
 export type InsertAttachment = z.infer<typeof insertAttachmentSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;
 
 export type CreateTicketRequest = InsertTicket;
 export type UpdateTicketRequest = Partial<InsertTicket>;
