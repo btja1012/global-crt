@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, varchar, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, varchar, integer, boolean, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -74,7 +74,10 @@ export const tickets = pgTable("tickets", {
   hasTaxes: boolean("has_taxes").default(false),
   liquidationNumber: text("liquidation_number"),
   receiptNumber: text("receipt_number"),
-});
+}, (table) => [
+  index("idx_tickets_status").on(table.status),
+  index("idx_tickets_created_at").on(table.createdAt),
+]);
 
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
@@ -83,7 +86,9 @@ export const comments = pgTable("comments", {
   userName: text("user_name").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_comments_ticket_id").on(table.ticketId),
+]);
 
 export const attachments = pgTable("attachments", {
   id: serial("id").primaryKey(),
@@ -92,7 +97,9 @@ export const attachments = pgTable("attachments", {
   fileName: text("file_name").notNull(),
   fileUrl: text("file_url").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_attachments_ticket_id").on(table.ticketId),
+]);
 
 export const ticketsRelations = relations(tickets, ({ many }) => ({
   comments: many(comments),

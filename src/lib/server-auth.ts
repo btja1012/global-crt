@@ -1,8 +1,14 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+
+const IS_PROD = process.env.NODE_ENV === "production";
+
+if (IS_PROD && !process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required in production");
+}
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
-const IS_PROD = process.env.NODE_ENV === "production";
 const COOKIE_NAME = "auth_token";
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
 
@@ -56,7 +62,11 @@ export async function validateCredentials(email: string, password: string): Prom
   for (const acc of accounts) {
     if (!acc.email || !acc.password) continue;
     if (email !== acc.email) continue;
-    if (password !== acc.password) return null;
+    // Support both bcrypt hashes (starts with $2) and plain text passwords (backward compat)
+    const passwordMatch = acc.password.startsWith("$2")
+      ? await bcrypt.compare(password, acc.password)
+      : password === acc.password;
+    if (!passwordMatch) return null;
     return { id: acc.id, email: acc.email, firstName: acc.firstName, lastName: acc.lastName };
   }
 

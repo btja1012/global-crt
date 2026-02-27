@@ -334,7 +334,7 @@ function TrackingContent() {
                   <p className="text-xs text-muted-foreground">Contáctenos por WhatsApp</p>
                 </div>
                 <a
-                  href={`https://wa.me/50622222222?text=Consulta%20sobre%20env%C3%ADo%20${ticket.trackingNumber}`}
+                  href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "50622222222"}?text=Consulta%20sobre%20env%C3%ADo%20${ticket.trackingNumber}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

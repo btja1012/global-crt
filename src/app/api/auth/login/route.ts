@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateCredentials, signToken, authCookieHeader } from "@/lib/server-auth";
+import { rateLimit } from "@/lib/rate-limiter";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  const limit = rateLimit(`login:${ip}`);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { message: `Demasiados intentos. Intente en ${limit.retryAfter} segundos.` },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    );
+  }
+
   try {
     const { email, password } = await req.json();
     if (!email || !password) {

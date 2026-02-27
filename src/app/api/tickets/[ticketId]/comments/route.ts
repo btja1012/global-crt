@@ -9,7 +9,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tic
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
   const { ticketId } = await params;
-  const result = await db.select().from(comments).where(eq(comments.ticketId, parseInt(ticketId))).orderBy(desc(comments.createdAt));
+  const id = parseInt(ticketId);
+  if (isNaN(id)) return NextResponse.json({ message: "ID inválido" }, { status: 400 });
+
+  const result = await db.select().from(comments).where(eq(comments.ticketId, id)).orderBy(desc(comments.createdAt));
   return NextResponse.json(result);
 }
 
@@ -19,10 +22,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tic
 
   try {
     const { ticketId } = await params;
+    const id = parseInt(ticketId);
+    if (isNaN(id)) return NextResponse.json({ message: "ID inválido" }, { status: 400 });
     const body = await req.json();
     const userName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
     const [newComment] = await db.insert(comments).values({
-      ticketId: parseInt(ticketId),
+      ticketId: id,
       userId: user.id,
       userName,
       content: body.content,

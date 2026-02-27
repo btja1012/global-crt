@@ -24,7 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Search, MoreHorizontal, Pencil, Trash2, MessageSquare, Paperclip, MapPin, Package } from "lucide-react";
+import { Loader2, Search, MoreHorizontal, Pencil, Trash2, MessageSquare, Paperclip, MapPin, Package, Download } from "lucide-react";
 import { TICKET_STATUSES, type TicketWithDetails, type TicketStatus } from "@shared/schema";
 
 const COLUMN_COLORS: Record<string, string> = {
@@ -56,7 +56,16 @@ export default function AdminPage() {
         </div>
 
         <div className="max-w-[1600px] mx-auto w-full flex-1 flex flex-col">
-          <div className="flex justify-end mb-3">
+          <div className="flex justify-end gap-2 mb-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => window.open("/api/tickets/export", "_blank")}
+            >
+              <Download className="w-4 h-4" />
+              Exportar CSV
+            </Button>
             <CreateTicketDialog />
           </div>
           <KanbanBoard />
@@ -161,6 +170,12 @@ function KanbanBoard() {
                 {/* Cards */}
                 <ScrollArea className="flex-1 px-2 pb-2">
                   <div className="space-y-2">
+                    {columnTickets.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                        <Package className="w-8 h-8 mb-2 opacity-30" />
+                        <p className="text-xs">Sin órdenes</p>
+                      </div>
+                    )}
                     {columnTickets.map((ticket) => (
                       <div
                         key={ticket.id}

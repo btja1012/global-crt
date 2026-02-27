@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useAddComment, useUploadAttachment } from "@/hooks/use-tickets";
+import { useAddComment, useUploadAttachment, useDeleteComment } from "@/hooks/use-tickets";
 import type { TicketWithDetails } from "@shared/schema";
-import { MessageSquare, Paperclip, Send, FileText, Loader2, MapPin, Package, Calendar, Truck } from "lucide-react";
+import { MessageSquare, Paperclip, Send, FileText, Loader2, MapPin, Package, Calendar, Truck, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -24,6 +24,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addComment = useAddComment();
   const uploadAttachment = useUploadAttachment();
+  const deleteComment = useDeleteComment();
 
   if (!ticket) return null;
 
@@ -194,7 +195,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: Props) {
             <div className="space-y-3">
               {ticket.comments && ticket.comments.length > 0 ? (
                 ticket.comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3" data-testid={`comment-${comment.id}`}>
+                  <div key={comment.id} className="flex gap-3 group" data-testid={`comment-${comment.id}`}>
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
                       {comment.userName?.[0] || "?"}
                     </div>
@@ -206,6 +207,15 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: Props) {
                             {format(new Date(comment.createdAt), "d MMM, HH:mm", { locale: es })}
                           </span>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 ml-auto text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => deleteComment.mutate(comment.id)}
+                          disabled={deleteComment.isPending}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
                       </div>
                       <p className="text-sm mt-1 text-muted-foreground">{comment.content}</p>
                     </div>

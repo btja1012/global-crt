@@ -132,6 +132,26 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+export function useDeleteComment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (commentId: number) => {
+      const res = await fetch(`/api/comments/${commentId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Error al eliminar comentario");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
 export function useUploadAttachment() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -143,7 +163,10 @@ export function useUploadAttachment() {
         body: JSON.stringify({ fileName: file.name, fileData }),
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Error al subir archivo");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Error al subir archivo");
+      }
       return res.json();
     },
     onSuccess: () => {
