@@ -4,11 +4,13 @@ import bcrypt from "bcryptjs";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
-if (IS_PROD && !process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET environment variable is required in production");
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (IS_PROD && !secret) {
+    throw new Error("JWT_SECRET environment variable is required in production");
+  }
+  return secret || "change-me-in-production";
 }
-
-const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 const COOKIE_NAME = "auth_token";
 const COOKIE_MAX_AGE = 8 * 60 * 60; // 8 hours
 
@@ -20,12 +22,12 @@ export interface AuthUser {
 }
 
 export function signToken(user: AuthUser): string {
-  return jwt.sign(user, JWT_SECRET, { expiresIn: "8h" });
+  return jwt.sign(user, getJwtSecret(), { expiresIn: "8h" });
 }
 
 export function verifyToken(token: string): AuthUser | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as AuthUser;
+    return jwt.verify(token, getJwtSecret()) as AuthUser;
   } catch {
     return null;
   }

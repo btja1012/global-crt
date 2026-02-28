@@ -20,6 +20,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Global CR Transport",
   description: "Soluciones premium de importación y exportación para Costa Rica y el mundo.",
+  themeColor: "#0f172a",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "GlobalCRT",
+  },
 };
 
 export default function RootLayout({

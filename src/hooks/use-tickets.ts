@@ -26,6 +26,8 @@ export function useTickets(filters: TicketFilters = {}) {
       if (!res.ok) throw new Error("Failed to fetch tickets");
       return res.json();
     },
+    refetchInterval: 30 * 1000,
+    refetchIntervalInBackground: false,
   });
 }
 

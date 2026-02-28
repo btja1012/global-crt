@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useTickets, useUpdateTicket, useDeleteTicket, useBulkTickets } from "@/hooks/use-tickets";
 import { Navigation } from "@/components/Navigation";
 import { CreateTicketDialog } from "@/components/CreateTicketDialog";
@@ -27,17 +27,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Loader2, Search, MoreHorizontal, Pencil, Trash2,
   MessageSquare, Paperclip, MapPin, Package, Download,
-  CheckSquare, Square, X, ChevronDown,
+  CheckSquare, Square, X, ChevronDown, BarChart2, Upload, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import {
   TICKET_STATUSES, SERVICE_TYPES, DIRECTION_TYPES,
@@ -72,13 +80,20 @@ export default function AdminPage() {
           </div>
         </div>
         <div className="max-w-[1600px] mx-auto w-full flex-1 flex flex-col">
-          <div className="flex justify-end gap-2 mb-3">
+          <div className="flex justify-end gap-2 mb-3 flex-wrap">
             <Link href="/admin/trash">
               <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
                 <Trash2 className="w-4 h-4" />
                 Papelera
               </Button>
             </Link>
+            <Link href="/admin/metrics">
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
+                <BarChart2 className="w-4 h-4" />
+                Métricas
+              </Button>
+            </Link>
+            <ImportCSVButton />
             <Button
               variant="outline"
               size="sm"
@@ -449,6 +464,130 @@ function KanbanBoard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+}
+
+function ImportCSVButton() {
+  const [open, setOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  const handleImport = async () => {
+    if (!file) return;
+    setImporting(true);
+    const formData = new FormData();
+    formData.append("csv", file);
+    try {
+      const res = await fetch("/api/tickets/import", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      const data = await res.json();
+      setResult(data);
+      if (data.imported > 0) {
+        queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      }
+    } catch {
+      setResult({ imported: 0, skipped: 0, errors: ["Error de conexión"] });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setFile(null);
+    setResult(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <>
+      <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => setOpen(true)}>
+        <Upload className="w-4 h-4" />
+        Importar CSV
+      </Button>
+
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Importar órdenes desde CSV</DialogTitle>
+            <DialogDescription>
+              Sube un archivo CSV con las órdenes a importar.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!result ? (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+                <p className="font-semibold text-foreground mb-2">Formato esperado (primera fila = encabezados):</p>
+                <code className="block bg-muted rounded p-2 text-[11px] leading-relaxed">
+                  clientName,origin,destination,status,serviceType,direction,cargoType
+                </code>
+                <p className="mt-2"><span className="font-medium text-foreground">Requeridos:</span> clientName, origin, destination</p>
+                <p><span className="font-medium text-foreground">Opcionales:</span> status (default: Nuevo), serviceType, direction, cargoType</p>
+              </div>
+
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+              />
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => inputRef.current?.click()}
+              >
+                <Upload className="w-4 h-4" />
+                {file ? file.name : "Seleccionar archivo CSV"}
+              </Button>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={handleClose}>Cancelar</Button>
+                <Button onClick={handleImport} disabled={!file || importing}>
+                  {importing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Importando...</> : "Importar"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 rounded-lg border p-4">
+                <CheckCircle2 className="w-8 h-8 text-green-500 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold">{result.imported} órdenes importadas</p>
+                  {result.skipped > 0 && (
+                    <p className="text-sm text-muted-foreground">{result.skipped} filas omitidas</p>
+                  )}
+                </div>
+              </div>
+              {result.errors.length > 0 && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-1">
+                  <div className="flex items-center gap-2 text-sm font-medium text-destructive">
+                    <AlertCircle className="w-4 h-4" />
+                    Errores
+                  </div>
+                  {result.errors.slice(0, 5).map((err, i) => (
+                    <p key={i} className="text-xs text-muted-foreground">{err}</p>
+                  ))}
+                  {result.errors.length > 5 && (
+                    <p className="text-xs text-muted-foreground">...y {result.errors.length - 5} más</p>
+                  )}
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={handleClose}>Cerrar</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

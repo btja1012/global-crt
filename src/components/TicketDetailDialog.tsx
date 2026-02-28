@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { useAddComment, useUploadAttachment, useDeleteComment, useTicketHistory 
 import type { TicketWithDetails } from "@shared/schema";
 import {
   MessageSquare, Paperclip, Send, FileText, Loader2,
-  MapPin, Package, Calendar, Truck, Trash2, History, User, Printer,
+  MapPin, Package, Calendar, Truck, Trash2, History, User, Printer, Eye, ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -46,7 +46,12 @@ const FIELD_LABELS: Record<string, string> = {
 
 export function TicketDetailDialog({ ticket, open, onOpenChange }: Props) {
   const [commentText, setCommentText] = useState("");
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string; isPdf: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const openPreview = useCallback((url: string, name: string) => {
+    const isPdf = /\.pdf$/i.test(name);
+    setPreviewFile({ url, name, isPdf });
+  }, []);
   const addComment = useAddComment();
   const uploadAttachment = useUploadAttachment();
   const deleteComment = useDeleteComment();
@@ -79,6 +84,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: Props) {
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-0">
@@ -247,25 +253,42 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: Props) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {ticket.attachments.map((att) => {
                     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(att.fileName);
+                    const isPdf = /\.pdf$/i.test(att.fileName);
+                    const canPreview = isImage || isPdf;
                     return (
-                      <a
+                      <div
                         key={att.id}
-                        href={att.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative rounded-lg border bg-muted/30 p-2 flex flex-col items-center gap-1 hover:bg-muted/60 transition-colors"
+                        className="group relative rounded-lg border bg-muted/30 p-2 flex flex-col items-center gap-1 hover:bg-muted/60 transition-colors cursor-pointer"
+                        onClick={() => canPreview ? openPreview(att.fileUrl, att.fileName) : window.open(att.fileUrl, "_blank")}
                         data-testid={`attachment-${att.id}`}
                       >
                         {isImage ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={att.fileUrl} alt={att.fileName} className="w-full h-20 object-cover rounded" />
                         ) : (
-                          <div className="w-full h-20 flex items-center justify-center">
+                          <div className="w-full h-20 flex items-center justify-center relative">
                             <FileText className="w-8 h-8 text-muted-foreground" />
+                            {isPdf && (
+                              <span className="absolute bottom-1 right-1 text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-950/30 px-1 rounded">PDF</span>
+                            )}
                           </div>
                         )}
                         <span className="text-xs truncate w-full text-center text-muted-foreground">{att.fileName}</span>
-                      </a>
+                        {canPreview && (
+                          <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded p-0.5">
+                            <Eye className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                        <a
+                          href={att.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded p-0.5"
+                        >
+                          <ExternalLink className="w-3 h-3 text-white" />
+                        </a>
+                      </div>
                     );
                   })}
                 </div>
@@ -324,5 +347,44 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: Props) {
         </Tabs>
       </DialogContent>
     </Dialog>
+
+    {/* File preview dialog */}
+    {previewFile && (
+      <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-4 py-3 border-b">
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle className="text-sm font-medium truncate">{previewFile.name}</DialogTitle>
+              <a
+                href={previewFile.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 p-4">
+            {previewFile.isPdf ? (
+              <iframe
+                src={previewFile.url}
+                className="w-full rounded border"
+                style={{ height: "70vh" }}
+                title={previewFile.name}
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={previewFile.url}
+                alt={previewFile.name}
+                className="w-full h-full object-contain max-h-[70vh]"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
+    </>
   );
 }
