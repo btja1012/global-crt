@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
-import type { TicketWithDetails, AuditLog, TicketStatus } from "@shared/schema";
+import type { Ticket, TicketWithDetails, AuditLog, TicketStatus } from "@shared/schema";
 
 export interface TicketFilters {
   search?: string;
@@ -128,6 +128,40 @@ export function useDeleteTicket() {
   });
 }
 
+export function useDeletedTickets() {
+  return useQuery<Ticket[]>({
+    queryKey: ["/api/tickets/deleted"],
+    queryFn: async () => {
+      const res = await fetch("/api/tickets/deleted", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch deleted tickets");
+      return res.json();
+    },
+  });
+}
+
+export function useRestoreTicket() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/tickets/${id}/restore`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Error al restaurar");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/deleted"] });
+      toast({ title: "Orden restaurada" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
 export function useBulkTickets() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -194,24 +228,16 @@ export function useDeleteComment() {
   });
 }
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 export function useUploadAttachment() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ ticketId, file }: { ticketId: number; file: File }) => {
-      const fileData = await fileToBase64(file);
+      const formData = new FormData();
+      formData.append("file", file);
       const res = await fetch(buildUrl("/api/tickets/:ticketId/attachments", { ticketId }), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileName: file.name, fileData }),
+        body: formData,
         credentials: "include",
       });
       if (!res.ok) {
@@ -222,6 +248,10 @@ export function useUploadAttachment() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      toast({ title: "Archivo subido correctamente" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 }

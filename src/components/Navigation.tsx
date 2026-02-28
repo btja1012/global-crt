@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/lib/language-context";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Ship, LogOut, LayoutDashboard, User, Menu, X } from "lucide-react";
+import { Ship, LogOut, LayoutDashboard, User, Menu, X, Moon, Sun } from "lucide-react";
 
 const navT = {
   es: {
@@ -35,6 +36,7 @@ export function Navigation() {
   const { user, logout, isAuthenticated } = useAuth();
   const location = usePathname();
   const { lang, toggleLang } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const t = navT[lang];
@@ -83,6 +85,17 @@ export function Navigation() {
               {lang === "es" ? "EN" : "ES"}
             </Button>
 
+            {/* Dark mode toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label="Toggle theme"
+            >
+              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            </Button>
+
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <Link href="/admin">
@@ -124,6 +137,15 @@ export function Navigation() {
               className="font-semibold text-xs tracking-widest px-2"
             >
               {lang === "es" ? "EN" : "ES"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label="Toggle theme"
+            >
+              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </Button>
 
             {!isAuthenticated && (

@@ -11,7 +11,7 @@ import { useAddComment, useUploadAttachment, useDeleteComment, useTicketHistory 
 import type { TicketWithDetails } from "@shared/schema";
 import {
   MessageSquare, Paperclip, Send, FileText, Loader2,
-  MapPin, Package, Calendar, Truck, Trash2, History, User,
+  MapPin, Package, Calendar, Truck, Trash2, History, User, Printer,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -93,8 +93,20 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: Props) {
           </div>
         </DialogHeader>
 
+        <div className="px-6 pt-2 flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-muted-foreground print:hidden"
+            onClick={() => window.print()}
+          >
+            <Printer className="w-4 h-4" />
+            Imprimir
+          </Button>
+        </div>
+
         <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="mx-6 mt-3 w-fit">
+          <TabsList className="mx-6 mt-1 w-fit">
             <TabsTrigger value="details">Detalles</TabsTrigger>
             <TabsTrigger value="comments" className="gap-1">
               <MessageSquare className="w-3.5 h-3.5" />

@@ -33,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 import {
   Loader2, Search, MoreHorizontal, Pencil, Trash2,
   MessageSquare, Paperclip, MapPin, Package, Download,
@@ -72,6 +73,12 @@ export default function AdminPage() {
         </div>
         <div className="max-w-[1600px] mx-auto w-full flex-1 flex flex-col">
           <div className="flex justify-end gap-2 mb-3">
+            <Link href="/admin/trash">
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
+                <Trash2 className="w-4 h-4" />
+                Papelera
+              </Button>
+            </Link>
             <Button
               variant="outline"
               size="sm"
