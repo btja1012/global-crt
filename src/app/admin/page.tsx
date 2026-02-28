@@ -80,17 +80,17 @@ export default function AdminPage() {
           </div>
         </div>
         <div className="max-w-[1600px] mx-auto w-full flex-1 flex flex-col">
-          <div className="flex justify-end gap-2 mb-3 flex-wrap">
+          <div className="flex justify-end gap-1 sm:gap-2 mb-3 flex-wrap">
             <Link href="/admin/trash">
               <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
                 <Trash2 className="w-4 h-4" />
-                Papelera
+                <span className="hidden sm:inline">Papelera</span>
               </Button>
             </Link>
             <Link href="/admin/metrics">
               <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
                 <BarChart2 className="w-4 h-4" />
-                Métricas
+                <span className="hidden sm:inline">Métricas</span>
               </Button>
             </Link>
             <ImportCSVButton />
@@ -101,7 +101,7 @@ export default function AdminPage() {
               onClick={() => window.open("/api/tickets/export", "_blank")}
             >
               <Download className="w-4 h-4" />
-              Exportar CSV
+              <span className="hidden sm:inline">Exportar CSV</span>
             </Button>
             <CreateTicketDialog />
           </div>
@@ -127,6 +127,7 @@ function useDebounce<T>(value: T, delay: number): T {
 function KanbanBoard() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [mobileStatus, setMobileStatus] = useState<TicketStatus>(TICKET_STATUSES[0]);
   const [serviceType, setServiceType] = useState("");
   const [direction, setDirection] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<TicketWithDetails | null>(null);
@@ -285,8 +286,138 @@ function KanbanBoard() {
         </div>
       )}
 
-      {/* Kanban columns */}
-      <div className="flex-1 max-w-[1600px] mx-auto w-full overflow-x-auto">
+      {/* ── Mobile list view (hidden on md+) ── */}
+      <div className="md:hidden flex-1 flex flex-col min-h-0">
+        {/* Status tabs */}
+        <div
+          className="flex gap-2 overflow-x-auto pb-2 mb-2"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
+        >
+          {TICKET_STATUSES.map((status) => {
+            const count = (tickets || []).filter((t) => t.status === status).length;
+            const active = mobileStatus === status;
+            return (
+              <button
+                key={status}
+                onClick={() => setMobileStatus(status)}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                  active
+                    ? "bg-card border-primary text-primary"
+                    : "bg-card border-border text-muted-foreground"
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${COLUMN_DOT_COLORS[status]}`} />
+                {status}
+                <span className="text-xs font-semibold">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Ticket list */}
+        <ScrollArea className="flex-1">
+          <div className="space-y-2 pb-20">
+            {(tickets || []).filter((t) => t.status === mobileStatus).length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                <Package className="w-10 h-10 mb-2 opacity-30" />
+                <p className="text-sm">Sin órdenes en este estado</p>
+                <CreateTicketDialog
+                  defaultStatus={mobileStatus}
+                  trigger={
+                    <Button variant="outline" size="sm" className="mt-3 gap-1">
+                      <span className="text-base leading-none">+</span> Nueva orden
+                    </Button>
+                  }
+                />
+              </div>
+            ) : (
+              (tickets || [])
+                .filter((t) => t.status === mobileStatus)
+                .map((ticket) => {
+                  const isSelected = selectedIds.has(ticket.id);
+                  return (
+                    <div
+                      key={ticket.id}
+                      className={`bg-card rounded-lg border p-3 cursor-pointer transition-colors ${
+                        isSelected ? "border-primary/60 bg-primary/5" : "hover:border-primary/30"
+                      }`}
+                      onClick={() =>
+                        isSelecting
+                          ? toggleSelect(ticket.id, { stopPropagation: () => {} } as React.MouseEvent)
+                          : setSelectedTicket(ticket)
+                      }
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <button
+                            onClick={(e) => toggleSelect(ticket.id, e)}
+                            className="flex-shrink-0 text-muted-foreground"
+                          >
+                            {isSelected
+                              ? <CheckSquare className="w-4 h-4 text-primary" />
+                              : <Square className="w-4 h-4 opacity-40" />}
+                          </button>
+                          <span className="text-xs font-mono text-primary font-semibold">{ticket.trackingNumber}</span>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 flex-shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <CreateTicketDialog
+                              existingTicket={ticket}
+                              trigger={
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                                </DropdownMenuItem>
+                              }
+                            />
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={(e) => { e.stopPropagation(); setDeleteId(ticket.id); }}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <p className="text-sm font-medium mb-1 line-clamp-1">{ticket.clientName}</p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{ticket.origin} → {ticket.destination}</span>
+                      </div>
+                      {ticket.notes && (
+                        <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{ticket.notes}</p>
+                      )}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground pt-2 border-t">
+                        <span className="flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" />{ticket.comments?.length || 0}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Paperclip className="w-3 h-3" />{ticket.attachments?.length || 0}
+                        </span>
+                        {ticket.serviceType && (
+                          <span className="ml-auto text-xs text-muted-foreground">{ticket.serviceType}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* ── Desktop Kanban (hidden on mobile) ── */}
+      <div className="hidden md:block flex-1 max-w-[1600px] mx-auto w-full overflow-x-auto">
         <div className="flex gap-4 min-w-[1000px] h-full pb-4">
           {TICKET_STATUSES.map((status) => {
             const columnTickets = (tickets || []).filter((t) => t.status === status);
@@ -510,7 +641,7 @@ function ImportCSVButton() {
     <>
       <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => setOpen(true)}>
         <Upload className="w-4 h-4" />
-        Importar CSV
+        <span className="hidden sm:inline">Importar CSV</span>
       </Button>
 
       <Dialog open={open} onOpenChange={handleClose}>
