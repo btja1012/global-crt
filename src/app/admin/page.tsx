@@ -220,22 +220,22 @@ function KanbanBoard() {
           />
         </div>
 
-        <Select value={serviceType} onValueChange={setServiceType}>
+        <Select value={serviceType || "all"} onValueChange={(v) => setServiceType(v === "all" ? "" : v)}>
           <SelectTrigger className="w-[160px] bg-card">
             <SelectValue placeholder="Tipo de servicio" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos los servicios</SelectItem>
+            <SelectItem value="all">Todos los servicios</SelectItem>
             {SERVICE_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
 
-        <Select value={direction} onValueChange={setDirection}>
+        <Select value={direction || "all"} onValueChange={(v) => setDirection(v === "all" ? "" : v)}>
           <SelectTrigger className="w-[130px] bg-card">
             <SelectValue placeholder="Dirección" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Import / Export</SelectItem>
+            <SelectItem value="all">Import / Export</SelectItem>
             {DIRECTION_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
           </SelectContent>
         </Select>
