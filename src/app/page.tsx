@@ -82,13 +82,13 @@ export default function HomePage() {
   const t = translations[lang];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="relative min-h-screen flex flex-col bg-background">
+      <div className="fixed inset-0 bg-gradient-to-br from-background via-background to-secondary/50 -z-20 pointer-events-none" />
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] -z-20 pointer-events-none" />
       <Navigation />
 
       {/* Hero Section */}
-      <section className="relative flex items-center justify-center min-h-screen overflow-hidden pt-16">
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/50 -z-20" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] -z-20" />
+      <section className="relative flex items-center justify-center min-h-screen pt-16">
 
         <div className="container px-4 md:px-6 relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-12 items-center py-12 lg:py-0">
           <motion.div
@@ -234,17 +234,17 @@ export default function HomePage() {
         <div className="container max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center sm:text-left">
           <div className="col-span-1 sm:col-span-2 flex flex-col items-center sm:items-start">
             <h3 className="text-xl md:text-2xl font-display font-bold mb-4">Global CR Transport</h3>
-            <p className="text-white/60 max-w-xs text-sm md:text-base">{t.footerDesc}</p>
+            <p className="text-background/60 max-w-xs text-sm md:text-base">{t.footerDesc}</p>
           </div>
           <div>
             <h4 className="font-bold mb-4 text-primary">{t.footerServices}</h4>
-            <ul className="space-y-2 text-white/60 text-sm">
+            <ul className="space-y-2 text-background/60 text-sm">
               {t.footerServicesList.map((s) => <li key={s}>{s}</li>)}
             </ul>
           </div>
           <div>
             <h4 className="font-bold mb-4 text-primary">{t.footerContact}</h4>
-            <ul className="space-y-3 text-white/60 text-sm">
+            <ul className="space-y-3 text-background/60 text-sm">
               <li className="flex items-center gap-2 justify-center sm:justify-start">
                 <MapPin className="w-4 h-4 flex-shrink-0" /> San José, Costa Rica
               </li>
@@ -258,7 +258,7 @@ export default function HomePage() {
             </ul>
           </div>
         </div>
-        <div className="container max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-white/10 text-center text-white/40 text-xs md:text-sm">
+        <div className="container max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-background/10 text-center text-background/40 text-xs md:text-sm">
           © {new Date().getFullYear()} Global CR Transport. {t.footerRights}. | global-crt.com
         </div>
       </footer>
