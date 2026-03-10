@@ -45,7 +45,6 @@ const translations = {
         title: "Transporte Aéreo",
         desc: "Envíos rápidos y confiables para mercancía que requiere entrega urgente. La opción ideal cuando el tiempo es crítico para su negocio.",
         features: [
-          "Entregas express en 24-72 h",
           "Manejo de carga especial",
           "Temperatura controlada",
           "Documentación y permisos",
@@ -170,7 +169,6 @@ const translations = {
         title: "Air Freight",
         desc: "Fast and reliable shipments for goods requiring urgent delivery. The ideal option when time is critical for your business.",
         features: [
-          "Express delivery in 24–72 h",
           "Special cargo handling",
           "Temperature-controlled options",
           "Documentation & permits",
