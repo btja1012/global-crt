@@ -21,7 +21,7 @@ const translations = {
     servicesBtn: "Nuestros Servicios",
     secureShipping: "Envío Seguro",
     globalReach: "Alcance Global",
-    support: "Soporte 24/7",
+    support: "Cobertura Global",
     freightLabel: "Transporte Marítimo",
     freightSub: "Servicio confiable de carga",
     yearsLabel: "Años en el mercado",
@@ -107,7 +107,6 @@ const translations = {
       { value: "50+", label: "Países conectados", icon: "globe" },
       { value: "20+", label: "Años de experiencia", icon: "award" },
       { value: "98%", label: "Satisfacción del cliente", icon: "star" },
-      { value: "24/7", label: "Soporte disponible", icon: "headphones" },
     ],
 
     // Process
@@ -145,7 +144,7 @@ const translations = {
     servicesBtn: "Our Services",
     secureShipping: "Secure Shipping",
     globalReach: "Global Reach",
-    support: "24/7 Support",
+    support: "Global Coverage",
     freightLabel: "Maritime Freight",
     freightSub: "Reliable cargo service",
     yearsLabel: "Years in the market",
@@ -231,7 +230,6 @@ const translations = {
       { value: "50+", label: "Connected countries", icon: "globe" },
       { value: "20+", label: "Years of experience", icon: "award" },
       { value: "98%", label: "Customer satisfaction", icon: "star" },
-      { value: "24/7", label: "Support available", icon: "headphones" },
     ],
 
     // Process
