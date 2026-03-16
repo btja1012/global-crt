@@ -294,22 +294,6 @@ export function CreateTicketDialog({
                 )} />
               </div>
 
-              {/* Cliente con autocomplete */}
-              <FormField control={form.control} name="clientName" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente</FormLabel>
-                  <FormControl>
-                    <>
-                      <Input {...field} list="client-suggestions" placeholder="Nombre del cliente" data-testid="input-client-name" />
-                      <datalist id="client-suggestions">
-                        {uniqueClients.map(c => <option key={c} value={c} />)}
-                      </datalist>
-                    </>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
               {/* Transporte + modo */}
               <div>
                 <CheckboxField form={form} name="requiresTransport" label="Transporte" />
@@ -336,6 +320,22 @@ export function CreateTicketDialog({
                   </div>
                 )}
               </div>
+
+              {/* Cliente con autocomplete */}
+              <FormField control={form.control} name="clientName" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente</FormLabel>
+                  <FormControl>
+                    <>
+                      <Input {...field} list="client-suggestions" placeholder="Nombre del cliente" data-testid="input-client-name" />
+                      <datalist id="client-suggestions">
+                        {uniqueClients.map(c => <option key={c} value={c} />)}
+                      </datalist>
+                    </>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
               {/* Suplidor con autocomplete */}
               <FormField control={form.control} name="supplier" render={({ field }) => (
