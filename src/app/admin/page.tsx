@@ -479,13 +479,14 @@ function KanbanBoard() {
                   <div className="flex items-center gap-1">
                     {canCollapse && (
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 gap-1 text-xs text-muted-foreground"
                         onClick={toggleCollapse}
                         title="Minimizar columna"
                       >
-                        <ChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className="w-3 h-3" />
+                        Min
                       </Button>
                     )}
                     <CreateTicketDialog

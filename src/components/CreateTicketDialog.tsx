@@ -169,7 +169,7 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
           const elapsed = Date.now() - parseInt(prev, 10);
           setLastOpenedLabel(formatElapsed(elapsed));
         } else {
-          setLastOpenedLabel(null);
+          setLastOpenedLabel("Primera apertura");
         }
         localStorage.setItem(storageKey, String(Date.now()));
 
@@ -221,10 +221,10 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
       <DialogContent className="sm:max-w-[760px]">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Orden" : "Nueva Orden de Ruteo"}</DialogTitle>
-          {isEditing && lastOpenedLabel && (
+          {isEditing && (
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
               <Clock className="w-3 h-3" />
-              Última apertura: {lastOpenedLabel}
+              {lastOpenedLabel ?? "Cargando..."}
             </p>
           )}
         </DialogHeader>
