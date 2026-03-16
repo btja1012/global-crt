@@ -175,6 +175,7 @@ export function CreateTicketDialog({
   });
 
   const selectedService = form.watch("serviceType");
+  const requiresTransport = form.watch("requiresTransport");
 
   // Autocomplete suggestions from historical data
   const uniqueClients = useMemo(
@@ -309,29 +310,31 @@ export function CreateTicketDialog({
                 </FormItem>
               )} />
 
-              {/* Servicios chips */}
+              {/* Transporte + modo */}
               <div>
-                <p className="text-sm font-medium mb-2">Servicios</p>
-                <div className="flex flex-wrap gap-2">
-                  {SERVICE_TYPES.map((type) => {
-                    const active = selectedService === type;
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => form.setValue("serviceType", active ? undefined : type)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
-                          active
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                        }`}
-                      >
-                        {active && <Check className="w-3 h-3" />}
-                        {type}
-                      </button>
-                    );
-                  })}
-                </div>
+                <CheckboxField form={form} name="requiresTransport" label="Transporte" />
+                {requiresTransport && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {(["Marítimo", "Terrestre", "Aéreo"] as const).map((type) => {
+                      const active = selectedService === type;
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => form.setValue("serviceType", active ? undefined : type as any)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
+                            active
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                          }`}
+                        >
+                          {active && <Check className="w-3 h-3" />}
+                          {type}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Suplidor con autocomplete */}
@@ -406,18 +409,13 @@ export function CreateTicketDialog({
                 )} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4 items-end">
-                <FormField control={form.control} name="agencyName" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Agencia</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} placeholder="Nombre de la agencia" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <div className="pb-2">
-                  <CheckboxField form={form} name="requiresTransport" label="Transporte" />
-                </div>
-              </div>
+              <FormField control={form.control} name="agencyName" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Agencia</FormLabel>
+                  <FormControl><Input {...field} value={field.value || ""} placeholder="Nombre de la agencia" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
               <Separator />
 
