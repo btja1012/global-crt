@@ -126,13 +126,11 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-function ticketElapsed(id: number, now: number): { label: string; color: string } | null {
-  if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(`ticket-opened-${id}`);
-  if (!stored) return null;
-  const ms = now - parseInt(stored, 10);
+function ticketElapsed(updatedAt: string | Date | null | undefined, now: number): { label: string; color: string } | null {
+  if (!updatedAt) return null;
+  const ms = now - new Date(updatedAt).getTime();
   const minutes = Math.floor(ms / 60000);
-  if (minutes < 5) return null; // muy reciente, no mostrar
+  if (minutes < 5) return null;
   if (minutes < 60) return { label: `${minutes}m`, color: "text-muted-foreground" };
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return { label: `${hours}h`, color: "text-blue-500" };
@@ -428,7 +426,7 @@ function KanbanBoard() {
                           <Paperclip className="w-3 h-3" />{ticket.attachments?.length || 0}
                         </span>
                         {(() => {
-                          const elapsed = ticketElapsed(ticket.id, now);
+                          const elapsed = ticketElapsed(ticket.updatedAt, now);
                           return elapsed ? (
                             <span className={`flex items-center gap-0.5 ml-auto font-medium ${elapsed.color}`}>
                               <Timer className="w-3 h-3" />
@@ -615,7 +613,7 @@ function KanbanBoard() {
                               {ticket.attachments?.length || 0}
                             </span>
                             {(() => {
-                              const elapsed = ticketElapsed(ticket.id, now);
+                              const elapsed = ticketElapsed(ticket.updatedAt, now);
                               return elapsed ? (
                                 <span className={`flex items-center gap-0.5 ml-auto font-medium ${elapsed.color}`}>
                                   <Timer className="w-3 h-3" />

@@ -162,16 +162,13 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
   useEffect(() => {
     if (open) {
       if (existingTicket) {
-        // Track last opened time
-        const storageKey = `ticket-opened-${existingTicket.id}`;
-        const prev = localStorage.getItem(storageKey);
-        if (prev) {
-          const elapsed = Date.now() - parseInt(prev, 10);
+        // Show time since last update using server-side updatedAt
+        if (existingTicket.updatedAt) {
+          const elapsed = Date.now() - new Date(existingTicket.updatedAt).getTime();
           setLastOpenedLabel(formatElapsed(elapsed));
         } else {
-          setLastOpenedLabel("Primera apertura");
+          setLastOpenedLabel(null);
         }
-        localStorage.setItem(storageKey, String(Date.now()));
 
         form.reset({
           ...EMPTY_DEFAULTS,
