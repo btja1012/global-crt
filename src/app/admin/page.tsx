@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useTickets, useUpdateTicket, useDeleteTicket, useBulkTickets } from "@/hooks/use-tickets";
 import { Navigation } from "@/components/Navigation";
 import { CreateTicketDialog } from "@/components/CreateTicketDialog";
@@ -45,7 +45,7 @@ import Link from "next/link";
 import {
   Loader2, Search, MoreHorizontal, Pencil, Trash2,
   MessageSquare, Paperclip, MapPin, Package, Download,
-  CheckSquare, Square, X, ChevronDown, ChevronLeft, ChevronRight, BarChart2, Upload, CheckCircle2, AlertCircle,
+  CheckSquare, Square, X, ChevronDown, ChevronLeft, ChevronRight, BarChart2, Upload, CheckCircle2, AlertCircle, Timer,
 } from "lucide-react";
 import {
   TICKET_STATUSES, SERVICE_TYPES, DIRECTION_TYPES,
@@ -126,6 +126,21 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
+function ticketElapsed(id: number, now: number): { label: string; color: string } | null {
+  if (typeof window === "undefined") return null;
+  const stored = localStorage.getItem(`ticket-opened-${id}`);
+  if (!stored) return null;
+  const ms = now - parseInt(stored, 10);
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 5) return null; // muy reciente, no mostrar
+  if (minutes < 60) return { label: `${minutes}m`, color: "text-muted-foreground" };
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return { label: `${hours}h`, color: "text-blue-500" };
+  const days = Math.floor(hours / 24);
+  if (days < 3) return { label: `${days}d`, color: "text-amber-500" };
+  return { label: `${days}d`, color: "text-red-500" };
+}
+
 function KanbanBoard() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -138,6 +153,11 @@ function KanbanBoard() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: tickets, isLoading } = useTickets({
     search: debouncedSearch,
@@ -407,9 +427,17 @@ function KanbanBoard() {
                         <span className="flex items-center gap-1">
                           <Paperclip className="w-3 h-3" />{ticket.attachments?.length || 0}
                         </span>
-                        {ticket.serviceType && (
-                          <span className="ml-auto text-xs text-muted-foreground">{ticket.serviceType}</span>
-                        )}
+                        {(() => {
+                          const elapsed = ticketElapsed(ticket.id, now);
+                          return elapsed ? (
+                            <span className={`flex items-center gap-0.5 ml-auto font-medium ${elapsed.color}`}>
+                              <Timer className="w-3 h-3" />
+                              {elapsed.label}
+                            </span>
+                          ) : ticket.serviceType ? (
+                            <span className="ml-auto text-xs text-muted-foreground">{ticket.serviceType}</span>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
                   );
@@ -586,12 +614,15 @@ function KanbanBoard() {
                               <Paperclip className="w-3 h-3" />
                               {ticket.attachments?.length || 0}
                             </span>
-                            {ticket.cargoType && (
-                              <span className="flex items-center gap-1 ml-auto">
-                                <Package className="w-3 h-3" />
-                                {ticket.cargoType}
-                              </span>
-                            )}
+                            {(() => {
+                              const elapsed = ticketElapsed(ticket.id, now);
+                              return elapsed ? (
+                                <span className={`flex items-center gap-0.5 ml-auto font-medium ${elapsed.color}`}>
+                                  <Timer className="w-3 h-3" />
+                                  {elapsed.label}
+                                </span>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                       );
