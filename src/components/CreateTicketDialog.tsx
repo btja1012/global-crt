@@ -294,6 +294,31 @@ export function CreateTicketDialog({
                 )} />
               </div>
 
+              {/* Cliente con autocomplete */}
+              <FormField control={form.control} name="clientName" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente</FormLabel>
+                  <FormControl>
+                    <>
+                      <Input {...field} list="client-suggestions" placeholder="Nombre del cliente" data-testid="input-client-name" />
+                      <datalist id="client-suggestions">
+                        {uniqueClients.map(c => <option key={c} value={c} />)}
+                      </datalist>
+                    </>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              {/* Agencia */}
+              <FormField control={form.control} name="agencyName" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Agencia</FormLabel>
+                  <FormControl><Input {...field} value={field.value || ""} placeholder="Nombre de la agencia" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               {/* Transporte + modo */}
               <div>
                 <CheckboxField form={form} name="requiresTransport" label="Transporte" />
@@ -320,22 +345,6 @@ export function CreateTicketDialog({
                   </div>
                 )}
               </div>
-
-              {/* Cliente con autocomplete */}
-              <FormField control={form.control} name="clientName" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente</FormLabel>
-                  <FormControl>
-                    <>
-                      <Input {...field} list="client-suggestions" placeholder="Nombre del cliente" data-testid="input-client-name" />
-                      <datalist id="client-suggestions">
-                        {uniqueClients.map(c => <option key={c} value={c} />)}
-                      </datalist>
-                    </>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
 
               {/* Suplidor con autocomplete */}
               <FormField control={form.control} name="supplier" render={({ field }) => (
@@ -408,14 +417,6 @@ export function CreateTicketDialog({
                   </FormItem>
                 )} />
               </div>
-
-              <FormField control={form.control} name="agencyName" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Agencia</FormLabel>
-                  <FormControl><Input {...field} value={field.value || ""} placeholder="Nombre de la agencia" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
 
               <Separator />
 
