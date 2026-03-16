@@ -55,7 +55,35 @@ export default function MetricsPage() {
     const delivered = byStatus.find((s) => s.status === "Facturado")?.count || 0;
     const deliveryRate = tickets.length > 0 ? Math.round((delivered / tickets.length) * 100) : 0;
 
-    return { byStatus, byService, byDirection, thisMonth, lastMonth, total: tickets.length, delivered, deliveryRate };
+    // Top clients by ticket count
+    const clientCounts: Record<string, number> = {};
+    tickets.forEach((t) => {
+      if (t.clientName) clientCounts[t.clientName] = (clientCounts[t.clientName] || 0) + 1;
+    });
+    const topClients = Object.entries(clientCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, count }));
+
+    // Avg cycle time (Nuevo → Facturado) for completed tickets
+    const completed = tickets.filter((t) => t.status === "Facturado" && t.createdAt && t.updatedAt);
+    const avgCycleDays = completed.length > 0
+      ? Math.round(
+          completed.reduce((sum, t) => {
+            return sum + (new Date(t.updatedAt!).getTime() - new Date(t.createdAt!).getTime());
+          }, 0) / completed.length / 86400000
+        )
+      : null;
+
+    // Bottleneck: which status has the most tickets
+    const bottleneck = byStatus.reduce((prev, curr) => (curr.count > prev.count ? curr : prev), byStatus[0]);
+
+    // Missing ETA count
+    const missingETA = tickets.filter(
+      (t) => (t.status === "En Proceso" || t.status === "En Tránsito") && !t.etaPort
+    ).length;
+
+    return { byStatus, byService, byDirection, thisMonth, lastMonth, total: tickets.length, delivered, deliveryRate, topClients, avgCycleDays, bottleneck, missingETA };
   }, [tickets]);
 
   if (isLoading) {
@@ -151,6 +179,46 @@ export default function MetricsPage() {
             ) : (
               <p className="text-sm text-muted-foreground py-1">Sin datos</p>
             )}
+          </div>
+        </Section>
+
+        {/* Top clients */}
+        {stats.topClients.length > 0 && (
+          <Section title="Clientes principales">
+            {stats.topClients.map(({ name, count }) => (
+              <BarRow
+                key={name}
+                label={name}
+                count={count}
+                max={stats.topClients[0]?.count || 1}
+                color="bg-primary/60"
+              />
+            ))}
+          </Section>
+        )}
+
+        {/* Cycle time & bottleneck */}
+        <Section title="Análisis operacional">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Tiempo ciclo promedio</p>
+              <p className="text-2xl font-bold">
+                {stats.avgCycleDays !== null ? `${stats.avgCycleDays}d` : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground">Nuevo → Facturado</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Cuello de botella</p>
+              <p className="text-2xl font-bold">{stats.bottleneck?.status || "—"}</p>
+              <p className="text-xs text-muted-foreground">{stats.bottleneck?.count || 0} órdenes</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Sin ETA definido</p>
+              <p className={`text-2xl font-bold ${stats.missingETA > 0 ? "text-amber-500" : ""}`}>
+                {stats.missingETA}
+              </p>
+              <p className="text-xs text-muted-foreground">En proceso / tránsito</p>
+            </div>
           </div>
         </Section>
       </main>

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Loader2, Plus, Clock, Check } from "lucide-react";
 
 const formSchema = insertTicketSchema.extend({
@@ -50,23 +50,19 @@ const EMPTY_DEFAULTS: FormValues = {
   serviceType: undefined,
   notes: "",
   assignedTo: null,
-  // Datos Generales
   supplier: "",
   fiscalWarehouse: "",
   forwarder: "",
-  // Servicio
   direction: undefined,
   loadType: undefined,
   agencyName: "",
   requiresTransport: false,
-  // Embarque
   supplierOrderNumber: "",
   transitTime: "",
   etaPort: "",
   blNumber: "",
   awbNumber: "",
   cpNumber: "",
-  // Aduana
   requiresInspection: false,
   requiresSenasa: false,
   requiresProcomer: false,
@@ -74,7 +70,6 @@ const EMPTY_DEFAULTS: FormValues = {
   movementNumber: "",
   requiresPrevioExamen: false,
   requiresRevisionAforador: false,
-  // Pagos
   paidDucaT: false,
   paidBodegaje: false,
   permitNumber: "",
@@ -84,12 +79,31 @@ const EMPTY_DEFAULTS: FormValues = {
   paidDua: false,
   paidRetiroDocumento: false,
   paidTerceros: false,
-  // Financiero
   invoiceNumber: "",
   hasTaxes: false,
   liquidationNumber: "",
   receiptNumber: "",
 };
+
+// Aduana quick-select presets
+const ADUANA_PRESETS = [
+  {
+    label: "Estándar",
+    values: { requiresInspection: true, requiresSenasa: false, requiresProcomer: false, requiresPrevioExamen: false, requiresRevisionAforador: false },
+  },
+  {
+    label: "Agrícola",
+    values: { requiresInspection: true, requiresSenasa: true, requiresPrevioExamen: true, requiresRevisionAforador: true, requiresProcomer: false },
+  },
+  {
+    label: "Electrónica",
+    values: { requiresProcomer: true, requiresInspection: true, requiresSenasa: false, requiresPrevioExamen: false, requiresRevisionAforador: false },
+  },
+  {
+    label: "Limpiar",
+    values: { requiresInspection: false, requiresSenasa: false, requiresProcomer: false, requiresPrevioExamen: false, requiresRevisionAforador: false },
+  },
+];
 
 interface Props {
   existingTicket?: any;
@@ -97,6 +111,7 @@ interface Props {
   defaultStatus?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  prefill?: Partial<FormValues>;
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -107,15 +122,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CheckboxField({
-  form,
-  name,
-  label,
-}: {
-  form: any;
-  name: keyof FormValues;
-  label: string;
-}) {
+function CheckboxField({ form, name, label }: { form: any; name: keyof FormValues; label: string }) {
   return (
     <FormField
       control={form.control}
@@ -123,10 +130,7 @@ function CheckboxField({
       render={({ field }) => (
         <FormItem className="flex flex-row items-center space-x-2 space-y-0">
           <FormControl>
-            <Checkbox
-              checked={!!field.value}
-              onCheckedChange={field.onChange}
-            />
+            <Checkbox checked={!!field.value} onCheckedChange={field.onChange} />
           </FormControl>
           <FormLabel className="font-normal cursor-pointer">{label}</FormLabel>
         </FormItem>
@@ -146,11 +150,19 @@ function formatElapsed(ms: number): string {
   return `hace ${days} día${days > 1 ? "s" : ""}`;
 }
 
-export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+export function CreateTicketDialog({
+  existingTicket,
+  trigger,
+  defaultStatus,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  prefill,
+}: Props) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const setOpen = isControlled ? (controlledOnOpenChange ?? (() => {})) : setInternalOpen;
+
   const [lastOpenedLabel, setLastOpenedLabel] = useState<string | null>(null);
   const createMutation = useCreateTicket();
   const updateMutation = useUpdateTicket();
@@ -164,17 +176,37 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, ope
 
   const selectedService = form.watch("serviceType");
 
+  // Autocomplete suggestions from historical data
+  const uniqueClients = useMemo(
+    () => [...new Set((allTickets || []).map((t: any) => t.clientName).filter(Boolean))].sort() as string[],
+    [allTickets],
+  );
+  const uniqueSuppliers = useMemo(
+    () => [...new Set((allTickets || []).map((t: any) => t.supplier).filter(Boolean))].sort() as string[],
+    [allTickets],
+  );
+
+  // Payment progress
+  const paymentValues = form.watch([
+    "paidDucaT", "paidBodegaje", "paidExoneracion", "paidTransporteInterno",
+    "paidSeguro", "paidDua", "paidRetiroDocumento", "paidTerceros",
+  ]);
+  const paidCount = paymentValues.filter(Boolean).length;
+
+  // Smart form: which shipment number fields to show
+  const showBL = !selectedService || selectedService === "Marítimo" || selectedService === "Agencia Aduanal";
+  const showAWB = !selectedService || selectedService === "Aéreo" || selectedService === "Agencia Aduanal";
+  const showCP = !selectedService || selectedService === "Terrestre" || selectedService === "Agencia Aduanal";
+
   useEffect(() => {
     if (open) {
       if (existingTicket) {
-        // Show time since last update using server-side updatedAt
         if (existingTicket.updatedAt) {
           const elapsed = Date.now() - new Date(existingTicket.updatedAt).getTime();
           setLastOpenedLabel(formatElapsed(elapsed));
         } else {
           setLastOpenedLabel(null);
         }
-
         form.reset({
           ...EMPTY_DEFAULTS,
           ...existingTicket,
@@ -190,6 +222,7 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, ope
           : 4687;
         form.reset({
           ...EMPTY_DEFAULTS,
+          ...(prefill || {}),
           trackingNumber: String(maxNum + 1),
           status: defaultStatus || "Nuevo",
         });
@@ -234,7 +267,6 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, ope
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            {/* Scrollable body */}
             <div className="overflow-y-auto max-h-[72vh] pr-2 space-y-5">
 
               {/* ── DATOS GENERALES ── */}
@@ -261,15 +293,23 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, ope
                 )} />
               </div>
 
+              {/* Cliente con autocomplete */}
               <FormField control={form.control} name="clientName" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente</FormLabel>
-                  <FormControl><Input {...field} placeholder="Nombre del cliente" data-testid="input-client-name" /></FormControl>
+                  <FormControl>
+                    <>
+                      <Input {...field} list="client-suggestions" placeholder="Nombre del cliente" data-testid="input-client-name" />
+                      <datalist id="client-suggestions">
+                        {uniqueClients.map(c => <option key={c} value={c} />)}
+                      </datalist>
+                    </>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
 
-              {/* ── SERVICIOS (chips) ── */}
+              {/* Servicios chips */}
               <div>
                 <p className="text-sm font-medium mb-2">Servicios</p>
                 <div className="flex flex-wrap gap-2">
@@ -294,10 +334,18 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, ope
                 </div>
               </div>
 
+              {/* Suplidor con autocomplete */}
               <FormField control={form.control} name="supplier" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Suplido / Proveedor</FormLabel>
-                  <FormControl><Input {...field} value={field.value || ""} placeholder="Nombre del proveedor" /></FormControl>
+                  <FormControl>
+                    <>
+                      <Input {...field} value={field.value || ""} list="supplier-suggestions" placeholder="Nombre del proveedor" />
+                      <datalist id="supplier-suggestions">
+                        {uniqueSuppliers.map(s => <option key={s} value={s} />)}
+                      </datalist>
+                    </>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -396,45 +444,70 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, ope
                 <FormItem>
                   <FormLabel>ETA Puerto CR</FormLabel>
                   <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      value={field.value || ""}
-                      className="cursor-pointer"
-                    />
+                    <Input type="date" {...field} value={field.value || ""} className="cursor-pointer" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
 
-              <div className="grid grid-cols-3 gap-4">
-                <FormField control={form.control} name="blNumber" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Marítimo BL#</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} placeholder="BL#" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="awbNumber" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Aéreo AWB#</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} placeholder="AWB#" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="cpNumber" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Terrestre CP#</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} placeholder="CP#" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
+              {/* Smart form: show only relevant shipment number fields */}
+              {(showBL || showAWB || showCP) && (
+                <div className={`grid gap-4 ${[showBL, showAWB, showCP].filter(Boolean).length === 1 ? "grid-cols-1" : [showBL, showAWB, showCP].filter(Boolean).length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                  {showBL && (
+                    <FormField control={form.control} name="blNumber" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Marítimo BL#</FormLabel>
+                        <FormControl><Input {...field} value={field.value || ""} placeholder="BL#" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  )}
+                  {showAWB && (
+                    <FormField control={form.control} name="awbNumber" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Aéreo AWB#</FormLabel>
+                        <FormControl><Input {...field} value={field.value || ""} placeholder="AWB#" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  )}
+                  {showCP && (
+                    <FormField control={form.control} name="cpNumber" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Terrestre CP#</FormLabel>
+                        <FormControl><Input {...field} value={field.value || ""} placeholder="CP#" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  )}
+                </div>
+              )}
 
               <Separator />
 
               {/* ── ADUANA / DUCA — SERVICIOS ADICIONALES ── */}
               <SectionTitle>Aduana / DUCA — Servicios Adicionales</SectionTitle>
+
+              {/* Quick-select presets */}
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Selección rápida</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {ADUANA_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        Object.entries(preset.values).forEach(([key, val]) => {
+                          form.setValue(key as keyof FormValues, val);
+                        });
+                      }}
+                      className="px-3 py-1 rounded-full border text-xs font-medium bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div>
                 <p className="text-xs text-muted-foreground mb-2">Requerimientos</p>
@@ -468,6 +541,20 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, ope
 
               {/* ── PAGOS REALIZADOS ── */}
               <SectionTitle>Pagos Realizados</SectionTitle>
+
+              {/* Payment progress bar */}
+              <div className="mb-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                  <span>{paidCount} de 8 pagos registrados</span>
+                  <span className={paidCount === 8 ? "text-green-500 font-medium" : ""}>{Math.round((paidCount / 8) * 100)}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-300 ${paidCount === 8 ? "bg-green-500" : paidCount >= 5 ? "bg-amber-500" : "bg-primary"}`}
+                    style={{ width: `${(paidCount / 8) * 100}%` }}
+                  />
+                </div>
+              </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <CheckboxField form={form} name="paidDucaT" label="DUCA-T" />
@@ -542,9 +629,8 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, ope
                 </FormItem>
               )} />
 
-            </div>{/* end scroll area */}
+            </div>
 
-            {/* Sticky footer */}
             <div className="flex justify-end gap-2 pt-4 border-t mt-4">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={isPending} data-testid="button-submit-ticket">

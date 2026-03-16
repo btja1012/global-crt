@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useTickets, useUpdateTicket, useDeleteTicket, useBulkTickets } from "@/hooks/use-tickets";
 import { Navigation } from "@/components/Navigation";
 import { CreateTicketDialog } from "@/components/CreateTicketDialog";
@@ -44,6 +44,7 @@ import {
   Loader2, Search, MoreHorizontal, Pencil, Trash2,
   MessageSquare, Paperclip, MapPin, Package,
   CheckSquare, Square, X, ChevronDown, ChevronLeft, ChevronRight, BarChart2, Timer,
+  AlertTriangle, Copy, ArrowRight,
 } from "lucide-react";
 import {
   TICKET_STATUSES, SERVICE_TYPES, DIRECTION_TYPES,
@@ -104,6 +105,21 @@ export default function AdminPage() {
   );
 }
 
+// Days before a ticket in a given status is considered "stalled"
+const STALL_DAYS: Partial<Record<TicketStatus, number>> = {
+  "Nuevo": 2,
+  "En Proceso": 4,
+  "Aduana": 5,
+  "En Tránsito": 10,
+  "Facturar": 3,
+};
+
+function getNextStatus(status: TicketStatus): TicketStatus | null {
+  const idx = TICKET_STATUSES.indexOf(status);
+  if (idx < 0 || idx >= TICKET_STATUSES.length - 1) return null;
+  return TICKET_STATUSES[idx + 1];
+}
+
 function ticketElapsed(updatedAt: string | Date | null | undefined, now: number): { label: string; color: string } | null {
   if (!updatedAt) return null;
   const ms = now - new Date(updatedAt).getTime();
@@ -128,6 +144,7 @@ function KanbanBoard() {
   const [draggedTicket, setDraggedTicket] = useState<TicketWithDetails | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [editingTicket, setEditingTicket] = useState<TicketWithDetails | null>(null);
+  const [duplicatingTicket, setDuplicatingTicket] = useState<Partial<Record<string, any>> | null>(null);
   const suppressCardClick = useRef(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
@@ -145,6 +162,21 @@ function KanbanBoard() {
   const updateTicket = useUpdateTicket();
   const deleteTicket = useDeleteTicket();
   const bulkTickets = useBulkTickets();
+
+  const alertData = useMemo(() => {
+    const list = tickets || [];
+    const stallNow = Date.now();
+    const stalled = list.filter((t) => {
+      const days = STALL_DAYS[t.status as TicketStatus];
+      if (!days || !t.updatedAt) return false;
+      return (stallNow - new Date(t.updatedAt).getTime()) > days * 86400000;
+    }).length;
+    const readyToInvoice = list.filter((t) => t.status === "Facturar").length;
+    const missingETA = list.filter((t) =>
+      (t.status === "En Proceso" || t.status === "En Tránsito") && !t.etaPort
+    ).length;
+    return { stalled, readyToInvoice, missingETA };
+  }, [tickets]);
 
   // Debounce search — update after 400ms
   useEffect(() => {
@@ -212,6 +244,30 @@ function KanbanBoard() {
 
   return (
     <>
+      {/* Alert widget */}
+      {(alertData.stalled > 0 || alertData.readyToInvoice > 0 || alertData.missingETA > 0) && (
+        <div className="max-w-[1600px] mx-auto w-full mb-3 flex flex-wrap gap-2">
+          {alertData.stalled > 0 && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-1.5 text-xs font-medium dark:bg-red-950/30 dark:border-red-800 dark:text-red-400">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+              {alertData.stalled} orden{alertData.stalled > 1 ? "es" : ""} estancada{alertData.stalled > 1 ? "s" : ""}
+            </div>
+          )}
+          {alertData.readyToInvoice > 0 && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-lg px-3 py-1.5 text-xs font-medium dark:bg-green-950/30 dark:border-green-800 dark:text-green-400">
+              <Package className="w-3.5 h-3.5 flex-shrink-0" />
+              {alertData.readyToInvoice} orden{alertData.readyToInvoice > 1 ? "es" : ""} por facturar
+            </div>
+          )}
+          {alertData.missingETA > 0 && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-1.5 text-xs font-medium dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400">
+              <Timer className="w-3.5 h-3.5 flex-shrink-0" />
+              {alertData.missingETA} sin ETA definido
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Filters bar */}
       <div className="max-w-[1600px] mx-auto w-full mb-3 flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[180px] max-w-xs">
@@ -379,6 +435,9 @@ function KanbanBoard() {
                             <DropdownMenuItem onSelect={() => { suppressCardClick.current = true; setEditingTicket(ticket); setTimeout(() => { suppressCardClick.current = false; }, 300); }}>
                               <Pencil className="mr-2 h-4 w-4" /> Editar
                             </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => { suppressCardClick.current = true; setDuplicatingTicket({ ...ticket, trackingNumber: undefined, status: "Nuevo" }); setTimeout(() => { suppressCardClick.current = false; }, 300); }}>
+                              <Copy className="mr-2 h-4 w-4" /> Duplicar
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
@@ -406,6 +465,7 @@ function KanbanBoard() {
                         </span>
                         {(() => {
                           const elapsed = ticketElapsed(ticket.updatedAt, now);
+                          const nextStatus = getNextStatus(ticket.status as TicketStatus);
                           return elapsed ? (
                             <span className={`flex items-center gap-0.5 ml-auto font-medium ${elapsed.color}`}>
                               <Timer className="w-3 h-3" />
@@ -416,6 +476,18 @@ function KanbanBoard() {
                           ) : null;
                         })()}
                       </div>
+                      {(() => {
+                        const nextStatus = getNextStatus(ticket.status as TicketStatus);
+                        if (!nextStatus) return null;
+                        return (
+                          <button
+                            className="mt-2 w-full flex items-center justify-center gap-1 text-xs text-primary border border-primary/20 rounded-md py-1 hover:bg-primary/5 transition-colors"
+                            onClick={(e) => { e.stopPropagation(); updateTicket.mutate({ id: ticket.id, status: nextStatus }); }}
+                          >
+                            <ArrowRight className="w-3 h-3" /> Mover a {nextStatus}
+                          </button>
+                        );
+                      })()}
                     </div>
                   );
                 })
@@ -558,6 +630,9 @@ function KanbanBoard() {
                                 <DropdownMenuItem onSelect={() => { suppressCardClick.current = true; setEditingTicket(ticket); setTimeout(() => { suppressCardClick.current = false; }, 300); }}>
                                   <Pencil className="mr-2 h-4 w-4" /> Editar
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => { suppressCardClick.current = true; setDuplicatingTicket({ ...ticket, trackingNumber: undefined, status: "Nuevo" }); setTimeout(() => { suppressCardClick.current = false; }, 300); }}>
+                                  <Copy className="mr-2 h-4 w-4" /> Duplicar
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
@@ -599,6 +674,18 @@ function KanbanBoard() {
                               ) : null;
                             })()}
                           </div>
+                          {(() => {
+                            const nextStatus = getNextStatus(ticket.status as TicketStatus);
+                            if (!nextStatus) return null;
+                            return (
+                              <button
+                                className="mt-2 w-full flex items-center justify-center gap-1 text-xs text-primary border border-primary/20 rounded-md py-1 opacity-0 group-hover:opacity-100 hover:bg-primary/5 transition-all"
+                                onClick={(e) => { e.stopPropagation(); updateTicket.mutate({ id: ticket.id, status: nextStatus }); }}
+                              >
+                                <ArrowRight className="w-3 h-3" /> {nextStatus}
+                              </button>
+                            );
+                          })()}
                         </div>
                       );
                     })}
@@ -661,6 +748,14 @@ function KanbanBoard() {
         existingTicket={editingTicket}
         open={!!editingTicket}
         onOpenChange={(o) => { if (!o) setEditingTicket(null); }}
+      />
+
+      {/* Duplicate ticket */}
+      <CreateTicketDialog
+        key={duplicatingTicket ? `dup-${duplicatingTicket.id}` : "no-dup"}
+        prefill={duplicatingTicket ?? undefined}
+        open={!!duplicatingTicket}
+        onOpenChange={(o) => { if (!o) setDuplicatingTicket(null); }}
       />
     </>
   );
