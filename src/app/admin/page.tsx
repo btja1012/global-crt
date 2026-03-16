@@ -674,8 +674,9 @@ function KanbanBoard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit ticket — rendered outside dropdown to avoid Radix focus bugs */}
+      {/* Edit ticket — key forces remount each time so Radix dialog state resets cleanly */}
       <CreateTicketDialog
+        key={editingTicket ? `edit-${editingTicket.id}` : "no-edit"}
         existingTicket={editingTicket}
         open={!!editingTicket}
         onOpenChange={(o) => { if (!o) setEditingTicket(null); }}
