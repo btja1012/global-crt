@@ -45,7 +45,7 @@ import Link from "next/link";
 import {
   Loader2, Search, MoreHorizontal, Pencil, Trash2,
   MessageSquare, Paperclip, MapPin, Package, Download,
-  CheckSquare, Square, X, ChevronDown, BarChart2, Upload, CheckCircle2, AlertCircle,
+  CheckSquare, Square, X, ChevronDown, ChevronLeft, ChevronRight, BarChart2, Upload, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import {
   TICKET_STATUSES, SERVICE_TYPES, DIRECTION_TYPES,
@@ -57,7 +57,8 @@ const COLUMN_COLORS: Record<string, string> = {
   "En Proceso": "border-t-blue-500",
   "Aduana": "border-t-amber-500",
   "En Tránsito": "border-t-purple-500",
-  "Entregado": "border-t-green-500",
+  "Facturar": "border-t-green-500",
+  "Facturado": "border-t-teal-500",
 };
 
 const COLUMN_DOT_COLORS: Record<string, string> = {
@@ -65,7 +66,8 @@ const COLUMN_DOT_COLORS: Record<string, string> = {
   "En Proceso": "bg-blue-500",
   "Aduana": "bg-amber-500",
   "En Tránsito": "bg-purple-500",
-  "Entregado": "bg-green-500",
+  "Facturar": "bg-green-500",
+  "Facturado": "bg-teal-500",
 };
 
 export default function AdminPage() {
@@ -135,6 +137,7 @@ function KanbanBoard() {
   const [draggedTicket, setDraggedTicket] = useState<TicketWithDetails | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
 
   const { data: tickets, isLoading } = useTickets({
     search: debouncedSearch,
@@ -421,6 +424,42 @@ function KanbanBoard() {
         <div className="flex gap-4 min-w-[1000px] h-full pb-4">
           {TICKET_STATUSES.map((status) => {
             const columnTickets = (tickets || []).filter((t) => t.status === status);
+            const canCollapse = status === "Facturado";
+            const isCollapsed = canCollapse && collapsedColumns.has(status);
+            const toggleCollapse = () => {
+              setCollapsedColumns((prev) => {
+                const next = new Set(prev);
+                next.has(status) ? next.delete(status) : next.add(status);
+                return next;
+              });
+            };
+
+            if (isCollapsed) {
+              return (
+                <div
+                  key={status}
+                  className={`flex-shrink-0 w-10 bg-card/50 rounded-xl border border-t-4 ${COLUMN_COLORS[status]} flex flex-col items-center py-3 gap-2 cursor-pointer hover:bg-card transition-colors`}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, status)}
+                  onClick={toggleCollapse}
+                  data-testid={`column-${status}`}
+                  title={`Expandir ${status}`}
+                >
+                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${COLUMN_DOT_COLORS[status]}`} />
+                  <span className="bg-muted text-muted-foreground text-xs font-semibold px-1.5 py-0.5 rounded-full">
+                    {columnTickets.length}
+                  </span>
+                  <span
+                    className="text-xs font-semibold text-muted-foreground mt-1"
+                    style={{ writingMode: "vertical-rl", textOrientation: "mixed", transform: "rotate(180deg)" }}
+                  >
+                    {status}
+                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mt-auto" />
+                </div>
+              );
+            }
+
             return (
               <div
                 key={status}
@@ -437,14 +476,27 @@ function KanbanBoard() {
                       {columnTickets.length}
                     </span>
                   </div>
-                  <CreateTicketDialog
-                    defaultStatus={status}
-                    trigger={
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
-                        <span className="text-lg leading-none">+</span>
+                  <div className="flex items-center gap-1">
+                    {canCollapse && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={toggleCollapse}
+                        title="Minimizar columna"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
                       </Button>
-                    }
-                  />
+                    )}
+                    <CreateTicketDialog
+                      defaultStatus={status}
+                      trigger={
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <span className="text-lg leading-none">+</span>
+                        </Button>
+                      }
+                    />
+                  </div>
                 </div>
 
                 <ScrollArea className="flex-1 px-2 pb-2">

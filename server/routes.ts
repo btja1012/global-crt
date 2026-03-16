@@ -126,7 +126,7 @@ async function seedDatabase() {
       clientName: "Farmacéutica Nacional",
       origin: "Madrid, España",
       destination: "Cartago, Costa Rica",
-      status: "Entregado",
+      status: "Facturado",
       cargoType: "Caja",
       notes: "Equipo médico - entrega completada",
       assignedTo: null,

@@ -68,13 +68,21 @@ const STATUS_CONFIG: Record<TicketStatus, {
     label: "En Tránsito",
     description: "Carga en camino al destino",
   },
-  "Entregado": {
+  "Facturar": {
     icon: CheckCircle2,
     color: "text-green-600",
     bgColor: "bg-green-100",
     badgeClass: "bg-green-100 text-green-700 border-green-200",
-    label: "Entregado",
-    description: "Carga entregada exitosamente",
+    label: "Por Facturar",
+    description: "Carga entregada, pendiente de facturación",
+  },
+  "Facturado": {
+    icon: CheckCircle2,
+    color: "text-teal-600",
+    bgColor: "bg-teal-100",
+    badgeClass: "bg-teal-100 text-teal-700 border-teal-200",
+    label: "Facturado",
+    description: "Carga entregada y facturada exitosamente",
   },
 };
 

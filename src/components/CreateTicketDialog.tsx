@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Clock, Check } from "lucide-react";
 
 const formSchema = insertTicketSchema.extend({
   trackingNumber: z.string().min(1, "Número de seguimiento requerido"),
@@ -46,8 +46,8 @@ const EMPTY_DEFAULTS: FormValues = {
   origin: "",
   destination: "",
   status: "Nuevo",
-  cargoType: "Contenedor",
-  serviceType: "Marítimo",
+  cargoType: null,
+  serviceType: undefined,
   notes: "",
   assignedTo: null,
   // Datos Generales
@@ -133,8 +133,20 @@ function CheckboxField({
   );
 }
 
+function formatElapsed(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) return "hace menos de 1 min";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours}h ${minutes % 60}min`;
+  const days = Math.floor(hours / 24);
+  return `hace ${days} día${days > 1 ? "s" : ""}`;
+}
+
 export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: Props) {
   const [open, setOpen] = useState(false);
+  const [lastOpenedLabel, setLastOpenedLabel] = useState<string | null>(null);
   const createMutation = useCreateTicket();
   const updateMutation = useUpdateTicket();
   const { data: allTickets } = useTickets();
@@ -145,18 +157,32 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
     defaultValues: EMPTY_DEFAULTS,
   });
 
+  const selectedService = form.watch("serviceType");
+
   useEffect(() => {
     if (open) {
       if (existingTicket) {
+        // Track last opened time
+        const storageKey = `ticket-opened-${existingTicket.id}`;
+        const prev = localStorage.getItem(storageKey);
+        if (prev) {
+          const elapsed = Date.now() - parseInt(prev, 10);
+          setLastOpenedLabel(formatElapsed(elapsed));
+        } else {
+          setLastOpenedLabel(null);
+        }
+        localStorage.setItem(storageKey, String(Date.now()));
+
         form.reset({
           ...EMPTY_DEFAULTS,
           ...existingTicket,
-          cargoType: existingTicket.cargoType || "Contenedor",
-          serviceType: existingTicket.serviceType || "Marítimo",
+          cargoType: existingTicket.cargoType || null,
+          serviceType: existingTicket.serviceType || undefined,
           notes: existingTicket.notes || "",
           assignedTo: existingTicket.assignedTo || null,
         });
       } else {
+        setLastOpenedLabel(null);
         const maxNum = allTickets && allTickets.length > 0
           ? Math.max(0, ...allTickets.map((t: any) => parseInt(t.trackingNumber) || 0))
           : 4687;
@@ -195,6 +221,12 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
       <DialogContent className="sm:max-w-[760px]">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Orden" : "Nueva Orden de Ruteo"}</DialogTitle>
+          {isEditing && lastOpenedLabel && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+              <Clock className="w-3 h-3" />
+              Última apertura: {lastOpenedLabel}
+            </p>
+          )}
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -233,6 +265,39 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
                 </FormItem>
               )} />
 
+              {/* ── SERVICIOS (chips) ── */}
+              <div>
+                <p className="text-sm font-medium mb-2">Servicios</p>
+                <div className="flex flex-wrap gap-2">
+                  {SERVICE_TYPES.map((type) => {
+                    const active = selectedService === type;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => form.setValue("serviceType", active ? undefined : type)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                        }`}
+                      >
+                        {active && <Check className="w-3 h-3" />}
+                        {type}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <FormField control={form.control} name="supplier" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Suplido / Proveedor</FormLabel>
+                  <FormControl><Input {...field} value={field.value || ""} placeholder="Nombre del proveedor" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="origin" render={({ field }) => (
                   <FormItem>
@@ -250,27 +315,10 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
                 )} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="forwarder" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Forwarder</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} placeholder="Agente de carga" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="fiscalWarehouse" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Almacén Fiscal</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} placeholder="Almacén fiscal" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-
-              <FormField control={form.control} name="supplier" render={({ field }) => (
+              <FormField control={form.control} name="fiscalWarehouse" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Suplido / Proveedor</FormLabel>
-                  <FormControl><Input {...field} value={field.value || ""} placeholder="Nombre del proveedor" /></FormControl>
+                  <FormLabel>Almacén Fiscal</FormLabel>
+                  <FormControl><Input {...field} value={field.value || ""} placeholder="Almacén fiscal" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -299,35 +347,6 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
                       <FormControl><SelectTrigger><SelectValue placeholder="FCL / LCL" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {LOAD_TYPES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="serviceType" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Servicio</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {SERVICE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="cargoType" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Mercancía</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {["Contenedor", "Pallet", "Caja", "Vehículo", "Otro"].map(t => (
-                          <SelectItem key={t} value={t}>{t}</SelectItem>
-                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -372,7 +391,14 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
               <FormField control={form.control} name="etaPort" render={({ field }) => (
                 <FormItem>
                   <FormLabel>ETA Puerto CR</FormLabel>
-                  <FormControl><Input {...field} value={field.value || ""} placeholder="Fecha estimada de arribo" /></FormControl>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      {...field}
+                      value={field.value || ""}
+                      className="cursor-pointer"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -403,8 +429,8 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
 
               <Separator />
 
-              {/* ── ADUANA / DUCA ── */}
-              <SectionTitle>Aduana / DUCA</SectionTitle>
+              {/* ── ADUANA / DUCA — SERVICIOS ADICIONALES ── */}
+              <SectionTitle>Aduana / DUCA — Servicios Adicionales</SectionTitle>
 
               <div>
                 <p className="text-xs text-muted-foreground mb-2">Requerimientos</p>
@@ -479,8 +505,8 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="liquidationNumber" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Liquidación # (LIQ)</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} placeholder="LIQ #" /></FormControl>
+                    <FormLabel>Nota de Débito #</FormLabel>
+                    <FormControl><Input {...field} value={field.value || ""} placeholder="ND #" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

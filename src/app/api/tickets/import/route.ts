@@ -40,7 +40,7 @@ function parseCSV(text: string): Record<string, string>[] {
     .filter((row) => Object.values(row).some((v) => v));
 }
 
-const VALID_STATUSES = ["Nuevo", "En Proceso", "Aduana", "En Tránsito", "Entregado"];
+const VALID_STATUSES = ["Nuevo", "En Proceso", "Aduana", "En Tránsito", "Facturar", "Facturado"];
 const VALID_SERVICE_TYPES = ["Marítimo", "Terrestre", "Aéreo", "Agencia Aduanal"];
 const VALID_DIRECTIONS = ["Import", "Export"];
 

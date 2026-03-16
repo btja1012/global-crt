@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 export * from "./models/auth";
 
-export const TICKET_STATUSES = ["Nuevo", "En Proceso", "Aduana", "En Tránsito", "Entregado"] as const;
+export const TICKET_STATUSES = ["Nuevo", "En Proceso", "Aduana", "En Tránsito", "Facturar", "Facturado"] as const;
 export type TicketStatus = typeof TICKET_STATUSES[number];
 
 export const SERVICE_TYPES = ["Marítimo", "Terrestre", "Aéreo", "Agencia Aduanal"] as const;

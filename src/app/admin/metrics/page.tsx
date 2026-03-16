@@ -14,7 +14,8 @@ const STATUS_COLORS: Record<string, string> = {
   "En Proceso": "bg-blue-500",
   "Aduana": "bg-amber-500",
   "En Tránsito": "bg-purple-500",
-  "Entregado": "bg-green-500",
+  "Facturar": "bg-green-500",
+  "Facturado": "bg-teal-500",
 };
 
 export default function MetricsPage() {
@@ -51,7 +52,7 @@ export default function MetricsPage() {
       return isAfter(d, lastMonthStart) && isBefore(d, thisMonthStart);
     }).length;
 
-    const delivered = byStatus.find((s) => s.status === "Entregado")?.count || 0;
+    const delivered = byStatus.find((s) => s.status === "Facturado")?.count || 0;
     const deliveryRate = tickets.length > 0 ? Math.round((delivered / tickets.length) * 100) : 0;
 
     return { byStatus, byService, byDirection, thisMonth, lastMonth, total: tickets.length, delivered, deliveryRate };

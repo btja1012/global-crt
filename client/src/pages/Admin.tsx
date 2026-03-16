@@ -33,7 +33,8 @@ const COLUMN_COLORS: Record<string, string> = {
   "En Proceso": "border-t-blue-500",
   "Aduana": "border-t-amber-500",
   "En Tránsito": "border-t-purple-500",
-  "Entregado": "border-t-green-500",
+  "Facturar": "border-t-green-500",
+  "Facturado": "border-t-teal-500",
 };
 
 const COLUMN_DOT_COLORS: Record<string, string> = {
@@ -41,7 +42,8 @@ const COLUMN_DOT_COLORS: Record<string, string> = {
   "En Proceso": "bg-blue-500",
   "Aduana": "bg-amber-500",
   "En Tránsito": "bg-purple-500",
-  "Entregado": "bg-green-500",
+  "Facturar": "bg-green-500",
+  "Facturado": "bg-teal-500",
 };
 
 export default function Admin() {
