@@ -195,7 +195,7 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, ope
         });
       }
     }
-  }, [open, existingTicket, form, defaultStatus, allTickets]);
+  }, [open, existingTicket, defaultStatus, allTickets]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = async (data: FormValues) => {
     try {

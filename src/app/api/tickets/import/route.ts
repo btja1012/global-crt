@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/server-auth";
 import { db } from "@/lib/server-db";
 import { tickets } from "../../../../../shared/schema";
-import { max } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 function parseCSVLine(line: string): string[] {
   const values: string[] = [];
@@ -65,9 +65,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "CSV vacío o formato inválido" }, { status: 400 });
   }
 
-  // Get next tracking number
-  const [{ maxNum }] = await db.select({ maxNum: max(tickets.trackingNumber) }).from(tickets);
-  let nextNum = (parseInt(maxNum || "0") || 4687) + 1;
+  // Get next tracking number — cast to integer for correct numeric max
+  const [{ maxNum }] = await db.select({
+    maxNum: sql<number>`COALESCE(MAX(CAST(tracking_number AS INTEGER) FILTER (WHERE tracking_number ~ '^[0-9]+$')), 4687)`,
+  }).from(tickets);
+  let nextNum = (maxNum || 4687) + 1;
 
   const results = { imported: 0, skipped: 0, errors: [] as string[] };
 

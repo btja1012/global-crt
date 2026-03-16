@@ -116,16 +116,6 @@ export default function AdminPage() {
   );
 }
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useState(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  });
-  // Use useCallback pattern via effect
-  return debounced;
-}
-
 function ticketElapsed(updatedAt: string | Date | null | undefined, now: number): { label: string; color: string } | null {
   if (!updatedAt) return null;
   const ms = now - new Date(updatedAt).getTime();
@@ -169,10 +159,13 @@ function KanbanBoard() {
   const bulkTickets = useBulkTickets();
 
   // Debounce search — update after 400ms
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const handleSearchChange = useCallback((val: string) => {
     setSearch(val);
-    const t = setTimeout(() => setDebouncedSearch(val), 400);
-    return () => clearTimeout(t);
   }, []);
 
   const isSelecting = selectedIds.size > 0;
