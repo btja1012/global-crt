@@ -149,6 +149,7 @@ function KanbanBoard() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [draggedTicket, setDraggedTicket] = useState<TicketWithDetails | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [editingTicket, setEditingTicket] = useState<TicketWithDetails | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
   const [now, setNow] = useState(Date.now());
@@ -392,14 +393,9 @@ function KanbanBoard() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <CreateTicketDialog
-                              existingTicket={ticket}
-                              trigger={
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  <Pencil className="mr-2 h-4 w-4" /> Editar
-                                </DropdownMenuItem>
-                              }
-                            />
+                            <DropdownMenuItem onSelect={() => setEditingTicket(ticket)}>
+                              <Pencil className="mr-2 h-4 w-4" /> Editar
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
@@ -573,14 +569,9 @@ function KanbanBoard() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <CreateTicketDialog
-                                  existingTicket={ticket}
-                                  trigger={
-                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                      <Pencil className="mr-2 h-4 w-4" /> Editar
-                                    </DropdownMenuItem>
-                                  }
-                                />
+                                <DropdownMenuItem onSelect={() => setEditingTicket(ticket)}>
+                                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
@@ -677,6 +668,13 @@ function KanbanBoard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit ticket — rendered outside dropdown to avoid Radix focus bugs */}
+      <CreateTicketDialog
+        existingTicket={editingTicket}
+        open={!!editingTicket}
+        onOpenChange={(o) => { if (!o) setEditingTicket(null); }}
+      />
     </>
   );
 }

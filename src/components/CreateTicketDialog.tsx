@@ -95,6 +95,8 @@ interface Props {
   existingTicket?: any;
   trigger?: React.ReactNode;
   defaultStatus?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -144,8 +146,11 @@ function formatElapsed(ms: number): string {
   return `hace ${days} día${days > 1 ? "s" : ""}`;
 }
 
-export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: Props) {
-  const [open, setOpen] = useState(false);
+export function CreateTicketDialog({ existingTicket, trigger, defaultStatus, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (controlledOnOpenChange ?? (() => {})) : setInternalOpen;
   const [lastOpenedLabel, setLastOpenedLabel] = useState<string | null>(null);
   const createMutation = useCreateTicket();
   const updateMutation = useUpdateTicket();
@@ -207,14 +212,16 @@ export function CreateTicketDialog({ existingTicket, trigger, defaultStatus }: P
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button className="gap-2" data-testid="button-new-ticket">
-            <Plus className="w-4 h-4" />
-            Nueva Orden
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button className="gap-2" data-testid="button-new-ticket">
+              <Plus className="w-4 h-4" />
+              Nueva Orden
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[760px]">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Orden" : "Nueva Orden de Ruteo"}</DialogTitle>
