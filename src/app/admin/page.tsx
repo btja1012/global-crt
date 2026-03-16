@@ -150,6 +150,7 @@ function KanbanBoard() {
   const [draggedTicket, setDraggedTicket] = useState<TicketWithDetails | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [editingTicket, setEditingTicket] = useState<TicketWithDetails | null>(null);
+  const suppressCardClick = useRef(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
   const [now, setNow] = useState(Date.now());
@@ -363,11 +364,12 @@ function KanbanBoard() {
                       className={`bg-card rounded-lg border p-3 cursor-pointer transition-colors ${
                         isSelected ? "border-primary/60 bg-primary/5" : "hover:border-primary/30"
                       }`}
-                      onClick={() =>
+                      onClick={() => {
+                        if (suppressCardClick.current) return;
                         isSelecting
                           ? toggleSelect(ticket.id, { stopPropagation: () => {} } as React.MouseEvent)
-                          : setSelectedTicket(ticket)
-                      }
+                          : setSelectedTicket(ticket);
+                      }}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2 min-w-0">
@@ -393,7 +395,7 @@ function KanbanBoard() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => setEditingTicket(ticket)}>
+                            <DropdownMenuItem onSelect={() => { suppressCardClick.current = true; setEditingTicket(ticket); setTimeout(() => { suppressCardClick.current = false; }, 300); }}>
                               <Pencil className="mr-2 h-4 w-4" /> Editar
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -541,7 +543,10 @@ function KanbanBoard() {
                           className={`bg-card rounded-lg border p-3 cursor-pointer transition-colors group ${
                             isSelected ? "border-primary/60 bg-primary/5" : "hover:border-primary/30"
                           }`}
-                          onClick={() => isSelecting ? toggleSelect(ticket.id, { stopPropagation: () => {} } as any) : setSelectedTicket(ticket)}
+                          onClick={() => {
+                            if (suppressCardClick.current) return;
+                            isSelecting ? toggleSelect(ticket.id, { stopPropagation: () => {} } as any) : setSelectedTicket(ticket);
+                          }}
                           data-testid={`ticket-card-${ticket.id}`}
                         >
                           <div className="flex items-start justify-between gap-1 mb-2">
@@ -569,7 +574,7 @@ function KanbanBoard() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onSelect={() => setEditingTicket(ticket)}>
+                                <DropdownMenuItem onSelect={() => { suppressCardClick.current = true; setEditingTicket(ticket); setTimeout(() => { suppressCardClick.current = false; }, 300); }}>
                                   <Pencil className="mr-2 h-4 w-4" /> Editar
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
