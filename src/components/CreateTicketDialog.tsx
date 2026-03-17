@@ -21,6 +21,7 @@ const formSchema = insertTicketSchema.extend({
   clientName: z.string().min(1, "Nombre del cliente requerido"),
   origin: z.string().min(1, "Origen requerido"),
   destination: z.string().min(1, "Destino requerido"),
+  requiresAgency: z.boolean().optional().default(false),
   requiresTransport: z.boolean().optional().default(false),
   requiresInspection: z.boolean().optional().default(false),
   requiresSenasa: z.boolean().optional().default(false),
@@ -56,6 +57,7 @@ const EMPTY_DEFAULTS: FormValues = {
   direction: undefined,
   loadType: undefined,
   agencyName: "",
+  requiresAgency: false,
   requiresTransport: false,
   supplierOrderNumber: "",
   transitTime: "",
@@ -176,6 +178,7 @@ export function CreateTicketDialog({
 
   const selectedService = form.watch("serviceType");
   const requiresTransport = form.watch("requiresTransport");
+  const requiresAgency = form.watch("requiresAgency");
 
   // Autocomplete suggestions from historical data
   const uniqueClients = useMemo(
@@ -215,6 +218,7 @@ export function CreateTicketDialog({
           serviceType: existingTicket.serviceType || undefined,
           notes: existingTicket.notes || "",
           assignedTo: existingTicket.assignedTo || null,
+          requiresAgency: !!existingTicket.agencyName,
         });
       } else {
         setLastOpenedLabel(null);
@@ -311,13 +315,30 @@ export function CreateTicketDialog({
               )} />
 
               {/* Agencia */}
-              <FormField control={form.control} name="agencyName" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Agencia</FormLabel>
-                  <FormControl><Input {...field} value={field.value || ""} placeholder="Nombre de la agencia" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <div>
+                <FormField control={form.control} name="requiresAgency" render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={!!field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (!checked) form.setValue("agencyName", "");
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal cursor-pointer">Agencia</FormLabel>
+                  </FormItem>
+                )} />
+                {requiresAgency && (
+                  <FormField control={form.control} name="agencyName" render={({ field }) => (
+                    <FormItem className="mt-3">
+                      <FormControl><Input {...field} value={field.value || ""} placeholder="Nombre de la agencia" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
+              </div>
 
               {/* Transporte + modo */}
               <div>
