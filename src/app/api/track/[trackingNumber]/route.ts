@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tra
   }).from(tickets).where(eq(tickets.trackingNumber, trackingNumber));
 
   if (!ticket) {
-    return NextResponse.json({ message: "Ticket not found" }, { status: 404 });
+    return NextResponse.json({ message: "Orden no encontrada" }, { status: 404 });
   }
 
   return NextResponse.json(ticket, {

@@ -229,12 +229,12 @@ export function CreateTicketDialog({
         });
       }
     }
-  }, [open, existingTicket, defaultStatus, allTickets]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, existingTicket, defaultStatus, allTickets, prefill]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = async (data: FormValues) => {
     try {
       if (isEditing) {
-        await updateMutation.mutateAsync({ id: existingTicket.id, ...data });
+        await updateMutation.mutateAsync({ id: existingTicket?.id, ...data });
       } else {
         await createMutation.mutateAsync(data);
       }
