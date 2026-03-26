@@ -44,7 +44,7 @@ import {
   Loader2, Search, MoreHorizontal, Pencil, Trash2,
   MessageSquare, Paperclip, MapPin, Package,
   CheckSquare, Square, X, ChevronDown, ChevronLeft, ChevronRight, BarChart2, Timer,
-  AlertTriangle, Copy, ArrowRight,
+  AlertTriangle, Copy, ArrowRight, FileCheck, FileX,
 } from "lucide-react";
 import {
   TICKET_STATUSES, SERVICE_TYPES, DIRECTION_TYPES,
@@ -120,8 +120,9 @@ function getNextStatus(status: TicketStatus): TicketStatus | null {
   return TICKET_STATUSES[idx + 1];
 }
 
-function ticketElapsed(updatedAt: string | Date | null | undefined, now: number): { label: string; color: string } | null {
+function ticketElapsed(updatedAt: string | Date | null | undefined, now: number, status?: string): { label: string; color: string } | null {
   if (!updatedAt) return null;
+  if (status === "Facturado") return null;
   const ms = now - new Date(updatedAt).getTime();
   const minutes = Math.floor(ms / 60000);
   if (minutes < 5) return null;
@@ -456,6 +457,16 @@ function KanbanBoard() {
                       {ticket.notes && (
                         <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{ticket.notes}</p>
                       )}
+                      {(ticket.status === "Aduana" || ticket.requiresInspection || ticket.requiresSenasa || ticket.requiresProcomer || ticket.requiresPrevioExamen || ticket.requiresRevisionAforador) && (
+                        <button
+                          className={`mb-2 flex items-center gap-1 text-xs rounded px-1.5 py-0.5 border transition-colors ${ticket.hasOriginalDocs ? "border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/10 hover:bg-green-500/20" : "border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20"}`}
+                          onClick={(e) => { e.stopPropagation(); updateTicket.mutate({ id: ticket.id, hasOriginalDocs: !ticket.hasOriginalDocs }); }}
+                          title="Alternar: documentos originales recibidos"
+                        >
+                          {ticket.hasOriginalDocs ? <FileCheck className="w-3 h-3" /> : <FileX className="w-3 h-3" />}
+                          {ticket.hasOriginalDocs ? "Docs originales ✓" : "Sin docs originales"}
+                        </button>
+                      )}
                       <div className="flex items-center gap-3 text-xs text-muted-foreground pt-2 border-t">
                         <span className="flex items-center gap-1">
                           <MessageSquare className="w-3 h-3" />{ticket.comments?.length || 0}
@@ -464,7 +475,7 @@ function KanbanBoard() {
                           <Paperclip className="w-3 h-3" />{ticket.attachments?.length || 0}
                         </span>
                         {(() => {
-                          const elapsed = ticketElapsed(ticket.updatedAt, now);
+                          const elapsed = ticketElapsed(ticket.updatedAt, now, ticket.status);
                           const nextStatus = getNextStatus(ticket.status as TicketStatus);
                           return elapsed ? (
                             <span className={`flex items-center gap-0.5 ml-auto font-medium ${elapsed.color}`}>
@@ -655,6 +666,17 @@ function KanbanBoard() {
                             <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{ticket.notes}</p>
                           )}
 
+                          {(ticket.status === "Aduana" || ticket.requiresInspection || ticket.requiresSenasa || ticket.requiresProcomer || ticket.requiresPrevioExamen || ticket.requiresRevisionAforador) && (
+                            <button
+                              className={`mb-2 flex items-center gap-1 text-xs rounded px-1.5 py-0.5 border transition-colors ${ticket.hasOriginalDocs ? "border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/10 hover:bg-green-500/20" : "border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20"}`}
+                              onClick={(e) => { e.stopPropagation(); updateTicket.mutate({ id: ticket.id, hasOriginalDocs: !ticket.hasOriginalDocs }); }}
+                              title="Alternar: documentos originales recibidos"
+                            >
+                              {ticket.hasOriginalDocs ? <FileCheck className="w-3 h-3" /> : <FileX className="w-3 h-3" />}
+                              {ticket.hasOriginalDocs ? "Docs originales ✓" : "Sin docs originales"}
+                            </button>
+                          )}
+
                           <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1 border-t">
                             <span className="flex items-center gap-1">
                               <MessageSquare className="w-3 h-3" />
@@ -665,7 +687,7 @@ function KanbanBoard() {
                               {ticket.attachments?.length || 0}
                             </span>
                             {(() => {
-                              const elapsed = ticketElapsed(ticket.updatedAt, now);
+                              const elapsed = ticketElapsed(ticket.updatedAt, now, ticket.status);
                               return elapsed ? (
                                 <span className={`flex items-center gap-0.5 ml-auto font-medium ${elapsed.color}`}>
                                   <Timer className="w-3 h-3" />

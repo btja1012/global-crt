@@ -58,6 +58,7 @@ export const tickets = pgTable("tickets", {
   movementNumber: text("movement_number"),
   requiresPrevioExamen: boolean("requires_previo_examen").default(false),
   requiresRevisionAforador: boolean("requires_revision_aforador").default(false),
+  hasOriginalDocs: boolean("has_original_docs").default(false),
 
   // --- Pagos Realizados ---
   paidDucaT: boolean("paid_duca_t").default(false),

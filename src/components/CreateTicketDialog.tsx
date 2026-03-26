@@ -537,6 +537,7 @@ export function CreateTicketDialog({
                   <CheckboxField form={form} name="requiresProcomer" label="PROCOMER" />
                   <CheckboxField form={form} name="requiresPrevioExamen" label="Previo-Examen" />
                   <CheckboxField form={form} name="requiresRevisionAforador" label="Revisión Aforador" />
+                  <CheckboxField form={form} name="hasOriginalDocs" label="Docs originales recibidos" />
                 </div>
               </div>
 
